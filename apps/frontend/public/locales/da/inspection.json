@@ -6,5 +6,8 @@
     "form": {
         "selectHive": "Vælg et stade",
         "pickDate": "Vælg en dato"
+    },
+    "scores": {
+        "overall": "Alt i alt"
     }
 }
