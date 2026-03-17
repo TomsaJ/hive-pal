@@ -1,0 +1,10 @@
+{
+    "list": {
+        "clearFilters": "Nulstil filtre"
+    },
+    "fields": {
+        "name": "Navn",
+        "location": "Placering",
+        "notSpecified": "Ikke angivet"
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "title": "Velkommen til Hive-Pal!",
+    "subtitle": "Lad os opsætte dit biavlsmiljø",
+    "steps": {
+        "welcome": "Velkommen",
+        "createApiary": "Opret bigård",
+        "addHive": "Tilføj det første stade",
+        "complete": "Gennemført"
+    },
+    "welcome": {
+        "title": "Start din biavls rejse",
+        "description": "Velkommen til Hive-Pal, dit digitale stadekort. Nu hjælper vi dig i gang med at oprette din første bigård og stade.",
+        "action": "Lad os komme i gang"
+    },
+    "apiary": {
+        "title": "Opret din første bigård",
+        "description": "En bigård er hvor dine stader er placeret. Lad os oprette en til dig."
+    },
+    "hive": {
+        "title": "Tilføj dit første stade",
+        "description": "Nu skal vi tilføje dit første stade til din nye bigård: {{apiaryName}}."
+    },
+    "complete": {
+        "title": "Tillykke!",
+        "description": "Du har nu oprettet din første bigård og dit første stade. Du er nu klar til at holde styr på alle dine aktiviteter med Hive-Pal!",
+        "action": "Gå til kontrolpanelet"
+    }
+}
