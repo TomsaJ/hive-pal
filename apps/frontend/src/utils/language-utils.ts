@@ -1,7 +1,9 @@
 export const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'sk', name: 'Slovenčina', flag: '🇸🇰' },
+  { code: 'da', name: 'Dansk', flag: '🇩🇰' },
   { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+  { code: 'sk', name: 'Slovenčina', flag: '🇸🇰' },
+  { code: 'sr', name: 'Српски', flag: '🇷🇸' },
 ] as const;
 
 export type SupportedLanguage = (typeof LANGUAGES)[number]['code'];
