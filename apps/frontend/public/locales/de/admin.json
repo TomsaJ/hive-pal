@@ -1,1 +1,68 @@
-{}
+{
+    "title": "Benutzerverwaltung",
+    "description": "Benutzer verwalten und Passwörter zurücksetzen",
+    "table": {
+        "email": "Email",
+        "name": "Name",
+        "role": "Rolle",
+        "passwordChangeRequired": "Passwortänderung erforderlich",
+        "createdAt": "Erstellt am",
+        "actions": "Aktionen",
+        "apiaries": "Bienenstände",
+        "hives": "Bienenstöcke",
+        "inspections": "Inspektion",
+        "lastActivity": "letzte Aktivität"
+    },
+    "actions": {
+        "resetPassword": "Password zurücksetzen"
+    },
+    "resetPasswordDialog": {
+        "title": "Benutzer-Passwort zurücksetzen",
+        "description": "Setze ein temporäres Passwort für {email}. Der Benutzer muss sein Passwort beim nächsten Login ändern.",
+        "tempPasswordLabel": "temporäres Passwort",
+        "tempPasswordPlaceholder": "temporäres Passwort eingeben",
+        "minCharacters": "Mindestens 6 Buchstaben",
+        "submit": "Passwort zurücksetzen"
+    },
+    "messages": {
+        "loading": "Lade...",
+        "loadingUsers": "Lade Benutzer...",
+        "noUsers": "Keine Benutzer gefunden",
+        "resetSuccess": "Passwort erfolgreich zurückgesetzt! Der Benutzer muss sein Passwort beim nächsten Login ändern.",
+        "failedToFetch": "Daten konnten nicht geladen werden",
+        "failedToReset": "Passwort konnte nicht zurückgesetzt werden",
+        "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten"
+    },
+    "status": {
+        "yes": "Ja",
+        "no": "Nein",
+        "dash": "-"
+    },
+    "userDetail": {
+        "backToList": "Zurück zu Benutzern",
+        "summary": {
+            "totalApiaries": "Anzahl der Standorte",
+            "totalHives": "Anzahl der Bienenstöcke",
+            "totalInspections": "Gesamtzahl Inspektionen",
+            "lastActivity": "Letzte Aktivität",
+            "lastInspection": "letzte Inspektion"
+        },
+        "recentActivity": {
+            "title": "Letzte Aktivitäten",
+            "period": "Letzte 30 Tage",
+            "inspections": "Inspektionen",
+            "actions": "Aktionen",
+            "byType": "Aktionen nach Typ"
+        },
+        "apiaryBreakdown": {
+            "title": "Bienenstand-Übersicht",
+            "name": "Name des Bienenstandes",
+            "location": "Standort",
+            "coordinates": "Koordinaten",
+            "hives": "Bienenstöcke",
+            "inspections": "Inspektionen",
+            "lastInspection": "letzte Inspektion",
+            "noApiaries": "Keine Bienenstände für diesen Benutzer gefunden"
+        }
+    }
+}
