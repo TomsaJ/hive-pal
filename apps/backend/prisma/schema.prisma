@@ -81,6 +81,8 @@ model Hive {
   alerts           Alert[]
   batchInspectionHives BatchInspectionHive[]
   quickChecks          QuickCheck[]
+  queenMovementsFrom   QueenMovement[] @relation("MovementFromHive")
+  queenMovementsTo     QueenMovement[] @relation("MovementToHive")
 
   // Create index for quick lookup by apiaryId - used in authorization checks
   @@index([apiaryId])
@@ -112,6 +114,7 @@ model Queen {
   id          String      @id @default(uuid())
   hiveId      String?
   hive        Hive?       @relation(fields: [hiveId], references: [id])
+  name        String?
   marking     String?
   color       String?
   year        Int?
@@ -119,9 +122,28 @@ model Queen {
   status      QueenStatus @default(ACTIVE)
   installedAt DateTime?
   replacedAt  DateTime?
+  movements   QueenMovement[]
 
   // Create index for quick lookup by hiveId - used in authorization checks
   @@index([hiveId])
+}
+
+model QueenMovement {
+  id         String    @id @default(uuid())
+  queenId    String
+  queen      Queen     @relation(fields: [queenId], references: [id], onDelete: Cascade)
+  fromHiveId String?
+  fromHive   Hive?     @relation("MovementFromHive", fields: [fromHiveId], references: [id])
+  toHiveId   String?
+  toHive     Hive?     @relation("MovementToHive", fields: [toHiveId], references: [id])
+  movedAt    DateTime  @default(now())
+  reason     String?
+  notes      String?
+  createdAt  DateTime  @default(now())
+
+  @@index([queenId])
+  @@index([fromHiveId])
+  @@index([toHiveId])
 }
 
 model Inspection {

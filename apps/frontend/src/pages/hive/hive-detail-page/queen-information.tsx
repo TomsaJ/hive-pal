@@ -17,7 +17,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ActiveQueen } from 'shared-schemas';
+import { ActiveQueen, QueenResponse } from 'shared-schemas';
+import { useState } from 'react';
+import { QueenTransferDialog } from '@/pages/queen/components/queen-transfer-dialog';
 
 type QueenInformationProps = {
   hiveId?: string;
@@ -31,6 +33,7 @@ export const QueenInformation: React.FC<QueenInformationProps> = ({
 }) => {
   const { t } = useTranslation('queen');
   const navigate = useNavigate();
+  const [transferOpen, setTransferOpen] = useState(false);
 
   const getColor = (color?: string | null) => {
     switch (color?.toLowerCase()) {
@@ -100,6 +103,9 @@ export const QueenInformation: React.FC<QueenInformationProps> = ({
                   <MoreHorizontal className="h-4 w-4 text-muted-foreground cursor-pointer" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                   <DropdownMenuItem onClick={() => setTransferOpen(true)}>
+                     Transfer Queen
+                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => navigate(`/queens/${activeQueen.id}/edit`)}
                   >
@@ -158,6 +164,9 @@ export const QueenInformation: React.FC<QueenInformationProps> = ({
                   <MoreHorizontal className="h-4 w-4 text-muted-foreground cursor-pointer" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setTransferOpen(true)}>
+                    Transfer Queen
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => navigate(`/queens/${activeQueen.id}/edit`)}
                   >
@@ -230,6 +239,14 @@ export const QueenInformation: React.FC<QueenInformationProps> = ({
           <div className="flex gap-1 items-center">-</div>
         </CardFooter>
       </div>
+
+      {activeQueen && (
+        <QueenTransferDialog
+          queen={activeQueen as QueenResponse}
+          open={transferOpen}
+          onOpenChange={setTransferOpen}
+        />
+      )}
     </Card>
   );
 };

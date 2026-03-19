@@ -1,34 +1,54 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApiaryUserFilter } from '../interface/request-with.apiary';
-import { CreateQueen, QueenResponse, UpdateQueen } from 'shared-schemas';
+import {
+  CreateQueen,
+  QueenResponse,
+  UpdateQueen,
+  RecordQueenTransfer,
+  QueenDetail,
+} from 'shared-schemas';
 
 @Injectable()
 export class QueensService {
   constructor(private prisma: PrismaService) {}
 
-  async create(
-    createQueenDto: CreateQueen,
-    filter: ApiaryUserFilter,
-  ): Promise<QueenResponse> {
-    // Check if the hive belongs to the user's apiary
+  private mapQueenToResponse(queen: {
+    id: string;
+    hiveId: string | null;
+    name: string | null;
+    marking: string | null;
+    color: string | null;
+    year: number | null;
+    source: string | null;
+    status: string;
+    installedAt: Date | null;
+    replacedAt: Date | null;
+    hive?: { name: string } | null;
+  }): QueenResponse {
+    return {
+      id: queen.id,
+      hiveId: queen.hiveId,
+      name: queen.name,
+      hiveName: queen.hive?.name ?? null,
+      marking: queen.marking,
+      color: queen.color,
+      year: queen.year,
+      source: queen.source,
+      status: queen.status as QueenResponse['status'],
+      installedAt: queen.installedAt?.toISOString() ?? null,
+      replacedAt: queen.replacedAt?.toISOString() ?? null,
+    };
+  }
+
+  async create(createQueenDto: CreateQueen, filter: ApiaryUserFilter): Promise<QueenResponse> {
     if (createQueenDto.hiveId) {
       const hive = await this.prisma.hive.findFirst({
-        where: {
-          id: createQueenDto.hiveId,
-          apiary: {
-            id: filter.apiaryId,
-            userId: filter.userId,
-          },
-        },
+        where: { id: createQueenDto.hiveId, apiary: { id: filter.apiaryId, userId: filter.userId } },
       });
-
       if (!hive) {
-        throw new NotFoundException(
-          `Hive with ID ${createQueenDto.hiveId} not found or doesn't belong to this apiary`,
-        );
+        throw new NotFoundException(`Hive with ID ${createQueenDto.hiveId} not found or does not belong to this apiary`);
       }
-
       if (createQueenDto.status === 'ACTIVE') {
         await this.markAllActiveQueensAsReplaced(createQueenDto.hiveId);
       }
@@ -37,183 +57,217 @@ export class QueensService {
     const queen = await this.prisma.queen.create({
       data: {
         hiveId: createQueenDto.hiveId,
+        name: createQueenDto.name,
         marking: createQueenDto.marking,
         color: createQueenDto.color,
         year: createQueenDto.year,
         source: createQueenDto.source,
         status: createQueenDto.status ?? 'ACTIVE',
-        installedAt: createQueenDto.installedAt
-          ? new Date(createQueenDto.installedAt)
-          : null,
-        replacedAt: createQueenDto.replacedAt
-          ? new Date(createQueenDto.replacedAt)
-          : null,
+        installedAt: createQueenDto.installedAt ? new Date(createQueenDto.installedAt) : null,
+        replacedAt: createQueenDto.replacedAt ? new Date(createQueenDto.replacedAt) : null,
       },
+      include: { hive: { select: { name: true } } },
     });
 
-    return {
-      id: queen.id,
-      hiveId: queen.hiveId,
-      marking: createQueenDto.marking,
-      color: queen.color,
-      year: queen.year,
-      source: queen.source,
-      status: queen.status,
-      installedAt: queen.installedAt?.toISOString(),
-      replacedAt: queen.replacedAt?.toISOString() || null,
-    };
+    if (createQueenDto.hiveId) {
+      await this.prisma.queenMovement.create({
+        data: {
+          queenId: queen.id,
+          fromHiveId: null,
+          toHiveId: createQueenDto.hiveId,
+          movedAt: queen.installedAt ?? new Date(),
+          reason: 'Initial installation',
+        },
+      });
+    }
+
+    return this.mapQueenToResponse(queen);
   }
 
-  async findAll(filter: ApiaryUserFilter): Promise<QueenResponse[]> {
-    // Find all queens for hives in the specified apiary owned by this user
-    const queens = await this.prisma.queen.findMany({
-      where: {
-        hive: {
-          apiary: {
-            id: filter.apiaryId,
-            userId: filter.userId,
-          },
-        },
-      },
-    });
+  async findAll(filter: ApiaryUserFilter, params?: { status?: string; hiveId?: string }): Promise<QueenResponse[]> {
+    const where: Record<string, unknown> = {
+      hive: { apiary: { id: filter.apiaryId, userId: filter.userId } },
+    };
+    if (params?.status) where['status'] = params.status;
+    if (params?.hiveId) where['hiveId'] = params.hiveId;
 
-    return queens.map((queen) => ({
-      id: queen.id,
-      hiveId: queen.hiveId,
-      marking: queen.marking,
-      color: queen.color,
-      year: queen.year,
-      source: queen.source,
-      status: queen.status,
-      installedAt: queen.installedAt?.toISOString(),
-      replacedAt: queen.replacedAt?.toISOString() || null,
-    }));
+    const queens = await this.prisma.queen.findMany({
+      where,
+      include: { hive: { select: { name: true } } },
+    });
+    return queens.map((queen) => this.mapQueenToResponse(queen));
   }
 
   async findOne(id: string, filter: ApiaryUserFilter): Promise<QueenResponse> {
     const queen = await this.prisma.queen.findFirst({
-      where: {
-        id,
-        hive: {
-          apiary: {
-            id: filter.apiaryId,
-            userId: filter.userId,
-          },
-        },
-      },
+      where: { id, hive: { apiary: { id: filter.apiaryId, userId: filter.userId } } },
+      include: { hive: { select: { name: true } } },
     });
-
-    if (!queen) {
-      throw new NotFoundException(`Queen with ID ${id} not found`);
-    }
-
-    return {
-      id: queen.id,
-      hiveId: queen.hiveId,
-      marking: queen.marking,
-      color: queen.color,
-      year: queen.year,
-      source: queen.source,
-      status: queen.status,
-      installedAt: queen.installedAt?.toISOString(),
-      replacedAt: queen.replacedAt?.toISOString() || null,
-    };
+    if (!queen) throw new NotFoundException(`Queen with ID ${id} not found`);
+    return this.mapQueenToResponse(queen);
   }
 
-  async update(
-    id: string,
-    updateQueenDto: UpdateQueen,
-    filter: ApiaryUserFilter,
-  ): Promise<QueenResponse> {
-    // Check if queen exists and belongs to the user's apiary
+  async update(id: string, updateQueenDto: UpdateQueen, filter: ApiaryUserFilter): Promise<QueenResponse> {
     const existingQueen = await this.prisma.queen.findFirst({
-      where: {
-        id,
-        hive: {
-          apiary: {
-            id: filter.apiaryId,
-            userId: filter.userId,
-          },
-        },
-      },
+      where: { id, hive: { apiary: { id: filter.apiaryId, userId: filter.userId } } },
     });
+    if (!existingQueen) throw new NotFoundException(`Queen with ID ${id} not found`);
 
-    if (!existingQueen) {
-      throw new NotFoundException(`Queen with ID ${id} not found`);
-    }
-
-    // Update queen
     const updatedQueen = await this.prisma.queen.update({
       where: { id },
       data: {
         hiveId: updateQueenDto.hiveId,
+        name: updateQueenDto.name,
         marking: updateQueenDto.marking,
         color: updateQueenDto.color,
         year: updateQueenDto.year,
         source: updateQueenDto.source,
         status: updateQueenDto.status ?? undefined,
-        installedAt: updateQueenDto.installedAt
-          ? new Date(updateQueenDto.installedAt)
-          : undefined,
-        replacedAt: updateQueenDto.replacedAt
-          ? new Date(updateQueenDto.replacedAt)
-          : null,
+        installedAt: updateQueenDto.installedAt ? new Date(updateQueenDto.installedAt) : undefined,
+        replacedAt: updateQueenDto.replacedAt ? new Date(updateQueenDto.replacedAt) : null,
       },
+      include: { hive: { select: { name: true } } },
     });
-
-    return {
-      id: updatedQueen.id,
-      hiveId: updatedQueen.hiveId,
-      marking: updatedQueen.marking,
-      color: updatedQueen.color,
-      year: updatedQueen.year,
-      source: updatedQueen.source,
-      status: updatedQueen.status,
-      installedAt: updatedQueen.installedAt?.toISOString(),
-      replacedAt: updatedQueen.replacedAt?.toISOString() || null,
-    };
+    return this.mapQueenToResponse(updatedQueen);
   }
 
   async remove(id: string, filter: ApiaryUserFilter) {
-    // Check if queen exists and belongs to the user's apiary
     const existingQueen = await this.prisma.queen.findFirst({
-      where: {
-        id,
-        hive: {
-          apiary: {
-            id: filter.apiaryId,
-            userId: filter.userId,
+      where: { id, hive: { apiary: { id: filter.apiaryId, userId: filter.userId } } },
+    });
+    if (!existingQueen) throw new NotFoundException(`Queen with ID ${id} not found`);
+    return this.prisma.queen.delete({ where: { id } });
+  }
+
+  async recordTransfer(queenId: string, dto: RecordQueenTransfer, filter: ApiaryUserFilter): Promise<QueenDetail> {
+    const queen = await this.prisma.queen.findFirst({
+      where: { id: queenId, hive: { apiary: { id: filter.apiaryId, userId: filter.userId } } },
+    });
+    if (!queen) throw new NotFoundException(`Queen with ID ${queenId} not found`);
+
+    if (dto.toHiveId) {
+      const targetHive = await this.prisma.hive.findFirst({
+        where: { id: dto.toHiveId, apiary: { id: filter.apiaryId, userId: filter.userId } },
+      });
+      if (!targetHive) {
+        throw new NotFoundException(`Target hive with ID ${dto.toHiveId} not found or does not belong to this apiary`);
+      }
+      const activeQueenInTarget = await this.prisma.queen.findFirst({
+        where: { hiveId: dto.toHiveId, status: 'ACTIVE' },
+      });
+      if (activeQueenInTarget && activeQueenInTarget.id !== queenId) {
+        await this.prisma.queen.update({
+          where: { id: activeQueenInTarget.id },
+          data: { status: 'REPLACED', replacedAt: new Date() },
+        });
+      }
+    }
+
+    const movedAt = dto.movedAt ? new Date(dto.movedAt) : new Date();
+
+    await this.prisma.queenMovement.create({
+      data: {
+        queenId,
+        fromHiveId: queen.hiveId,
+        toHiveId: dto.toHiveId,
+        movedAt,
+        reason: dto.reason,
+        notes: dto.notes,
+      },
+    });
+
+    await this.prisma.queen.update({
+      where: { id: queenId },
+      data: { hiveId: dto.toHiveId, installedAt: movedAt, status: 'ACTIVE' },
+    });
+
+    return this.getQueenHistory(queenId, filter);
+  }
+
+  async getQueenHistory(queenId: string, filter: ApiaryUserFilter): Promise<QueenDetail> {
+    const queen = await this.prisma.queen.findFirst({
+      where: { id: queenId, hive: { apiary: { id: filter.apiaryId, userId: filter.userId } } },
+      include: {
+        hive: { select: { name: true } },
+        movements: {
+          include: {
+            fromHive: { select: { name: true } },
+            toHive: { select: { name: true } },
           },
+          orderBy: { movedAt: 'desc' },
         },
       },
     });
 
-    if (!existingQueen) {
-      throw new NotFoundException(`Queen with ID ${id} not found`);
-    }
+    if (!queen) throw new NotFoundException(`Queen with ID ${queenId} not found`);
 
-    // Delete queen
-    return this.prisma.queen.delete({
-      where: { id },
+    return {
+      id: queen.id,
+      hiveId: queen.hiveId,
+      name: queen.name,
+      hiveName: queen.hive?.name ?? null,
+      marking: queen.marking,
+      color: queen.color,
+      year: queen.year,
+      source: queen.source,
+      status: queen.status as QueenResponse['status'],
+      installedAt: queen.installedAt?.toISOString() ?? null,
+      replacedAt: queen.replacedAt?.toISOString() ?? null,
+      movements: queen.movements.map((m) => ({
+        id: m.id,
+        queenId: m.queenId,
+        fromHiveId: m.fromHiveId,
+        fromHiveName: m.fromHive?.name ?? null,
+        toHiveId: m.toHiveId,
+        toHiveName: m.toHive?.name ?? null,
+        movedAt: m.movedAt.toISOString(),
+        reason: m.reason,
+        notes: m.notes,
+      })),
+    };
+  }
+
+  async getHiveQueenHistory(hiveId: string, filter: ApiaryUserFilter): Promise<QueenResponse[]> {
+    const hive = await this.prisma.hive.findFirst({
+      where: { id: hiveId, apiary: { id: filter.apiaryId, userId: filter.userId } },
     });
+    if (!hive) throw new NotFoundException(`Hive with ID ${hiveId} not found`);
+
+    const directQueens = await this.prisma.queen.findMany({
+      where: { hiveId },
+      include: { hive: { select: { name: true } } },
+    });
+
+    const movementQueens = await this.prisma.queen.findMany({
+      where: {
+        movements: { some: { toHiveId: hiveId } },
+        hiveId: { not: hiveId },
+      },
+      include: { hive: { select: { name: true } } },
+    });
+
+    const allQueens = [
+      ...directQueens,
+      ...movementQueens.filter((mq) => !directQueens.some((dq) => dq.id === mq.id)),
+    ];
+
+    allQueens.sort((a, b) => {
+      const aDate = a.installedAt?.getTime() ?? 0;
+      const bDate = b.installedAt?.getTime() ?? 0;
+      return bDate - aDate;
+    });
+
+    return allQueens.map((queen) => this.mapQueenToResponse(queen));
   }
 
   async findCurrentQueen(hiveId: string) {
-    return this.prisma.queen.findFirst({
-      where: {
-        hiveId: hiveId,
-        status: 'ACTIVE',
-      },
-    });
+    return this.prisma.queen.findFirst({ where: { hiveId, status: 'ACTIVE' } });
   }
 
   async markAllActiveQueensAsReplaced(hiveId: string) {
     return this.prisma.queen.updateMany({
       where: { hiveId, status: 'ACTIVE' },
-      data: {
-        status: 'REPLACED',
-        replacedAt: new Date(),
-      },
+      data: { status: 'REPLACED', replacedAt: new Date() },
     });
   }
 }

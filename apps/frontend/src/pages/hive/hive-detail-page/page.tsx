@@ -12,6 +12,7 @@ import { HiveSettings } from './hive-settings';
 import { HiveCharts } from './charts';
 import { useHive } from '@/api/hooks';
 import { useBreadcrumbStore } from '@/stores/breadcrumb-store';
+import { QueenHistoryTab } from './queen-history-tab';
 
 export const HiveDetailPage = () => {
   const { id: hiveId } = useParams<{ id: string }>();
@@ -78,6 +79,9 @@ export const HiveDetailPage = () => {
               <TabsTrigger value="settings" className="text-xs sm:text-sm">
                 Settings
               </TabsTrigger>
+              <TabsTrigger value="queens" className="text-xs sm:text-sm">
+                Queen History
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
@@ -115,6 +119,10 @@ export const HiveDetailPage = () => {
 
             <TabsContent value="settings">
               <HiveSettings hive={hive} onHiveUpdated={refetch} />
+            </TabsContent>
+
+            <TabsContent value="queens">
+              {hive && <QueenHistoryTab hiveId={hive.id} />}
             </TabsContent>
           </Tabs>
         </div>
