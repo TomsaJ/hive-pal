@@ -16,26 +16,7 @@ import {
 import { useQueenHistory } from '@/api/hooks';
 import { QueenTransferDialog } from './components/queen-transfer-dialog';
 import { QueenResponse } from 'shared-schemas';
-
-const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  ACTIVE: 'default',
-  REPLACED: 'secondary',
-  DEAD: 'destructive',
-  UNKNOWN: 'outline',
-};
-
-const COLOR_CLASSES: Record<string, string> = {
-  blue: 'bg-blue-500',
-  green: 'bg-green-500',
-  red: 'bg-red-500',
-  yellow: 'bg-yellow-500',
-  purple: 'bg-purple-500',
-  indigo: 'bg-indigo-500',
-  pink: 'bg-pink-500',
-  gray: 'bg-gray-500',
-  black: 'bg-black',
-  white: 'bg-white border border-gray-200',
-};
+import { QUEEN_STATUS_VARIANTS, getQueenColorClass, getQueenDisplayName } from '@/lib/queen-utils';
 
 export const QueenDetailPage = () => {
   const { queenId } = useParams<{ queenId: string }>();
@@ -63,7 +44,7 @@ export const QueenDetailPage = () => {
     );
   }
 
-  const colorClass = queen.color ? (COLOR_CLASSES[queen.color.toLowerCase()] ?? 'bg-white') : 'bg-white';
+  const colorClass = getQueenColorClass(queen.color, 'bg-white');
 
   return (
     <div className="container mx-auto max-w-3xl p-4 space-y-6">
@@ -79,7 +60,7 @@ export const QueenDetailPage = () => {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Crown className="h-5 w-5 text-amber-500" />
-                  {queen.name || queen.marking || `Queen ${queen.year ?? ''}`}
+                  {getQueenDisplayName(queen.name, queen.marking, queen.year)}
                 </CardTitle>
                 {queen.hiveName && (
                   <p className="text-sm text-muted-foreground mt-1">
@@ -89,7 +70,7 @@ export const QueenDetailPage = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant={STATUS_VARIANTS[queen.status ?? 'UNKNOWN'] ?? 'outline'}>
+              <Badge variant={QUEEN_STATUS_VARIANTS[queen.status ?? 'UNKNOWN'] ?? 'outline'}>
                 {queen.status}
               </Badge>
             </div>

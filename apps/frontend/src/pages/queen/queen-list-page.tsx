@@ -21,26 +21,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQueens, useHives } from '@/api/hooks';
-
-const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  ACTIVE: 'default',
-  REPLACED: 'secondary',
-  DEAD: 'destructive',
-  UNKNOWN: 'outline',
-};
-
-const COLOR_CLASSES: Record<string, string> = {
-  blue: 'bg-blue-500',
-  green: 'bg-green-500',
-  red: 'bg-red-500',
-  yellow: 'bg-yellow-500',
-  purple: 'bg-purple-500',
-  indigo: 'bg-indigo-500',
-  pink: 'bg-pink-500',
-  gray: 'bg-gray-500',
-  black: 'bg-black',
-  white: 'bg-white border border-gray-200',
-};
+import { QUEEN_STATUS_VARIANTS, getQueenColorClass, getQueenDisplayName } from '@/lib/queen-utils';
 
 export const QueenListPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -133,14 +114,12 @@ export const QueenListPage = () => {
             </TableHeader>
             <TableBody>
               {queens.map((queen) => {
-                const colorClass = queen.color
-                  ? (COLOR_CLASSES[queen.color.toLowerCase()] ?? 'bg-gray-200')
-                  : 'bg-gray-200';
+                const colorClass = getQueenColorClass(queen.color);
                 return (
                   <TableRow key={queen.id}>
                     <TableCell>
                       <Link to={`/queens/${queen.id}`} className="font-medium hover:underline">
-                        {queen.name || queen.marking || `Queen ${queen.year ?? '—'}`}
+                        {getQueenDisplayName(queen.name, queen.marking, queen.year)}
                       </Link>
                     </TableCell>
                     <TableCell>
@@ -160,7 +139,7 @@ export const QueenListPage = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={STATUS_VARIANTS[queen.status ?? 'UNKNOWN'] ?? 'outline'}>
+                      <Badge variant={QUEEN_STATUS_VARIANTS[queen.status ?? 'UNKNOWN'] ?? 'outline'}>
                         {queen.status}
                       </Badge>
                     </TableCell>
