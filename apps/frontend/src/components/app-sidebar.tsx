@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Crown,
   FolderOpen,
+  Crown,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 

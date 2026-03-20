@@ -240,6 +240,30 @@ export const QueenInformation: React.FC<QueenInformationProps> = ({
       </div>
     );
   }
+  const queenActionsMenu = activeQueen ? (
+    <DropdownMenu>
+      <DropdownMenuTrigger>
+        <MoreHorizontal className="h-4 w-4 text-muted-foreground cursor-pointer" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => setTransferOpen(true)}>
+          {t('actions.transferQueen')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate(`/queens/${activeQueen.id}/edit`)}>
+          {t('actions.editQueen')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleReplaceQueen}>
+          {t('actions.replaceQueen')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleMarkQueenState('DEAD')}>
+          {t('actions.markAsDead')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleMarkQueenState('REPLACED')}>
+          {t('actions.markAsLostMissing')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ) : null;
 
   return (
     <Card className="p-3 sm:p-0">
