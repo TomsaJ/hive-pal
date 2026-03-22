@@ -31,6 +31,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useTranslation } from 'react-i18next';
 
 interface EquipmentRowProps {
   item: EquipmentItemWithCalculations;
@@ -489,7 +490,7 @@ export const EquipmentTable = ({
     EquipmentCategory.EXTRACTION,
     EquipmentCategory.CUSTOM,
   ];
-
+  const { t } = useTranslation('hives');
   return (
     <div className="space-y-6">
       {/* Add Equipment Button */}
@@ -502,7 +503,9 @@ export const EquipmentTable = ({
             className="gap-2"
           >
             <Plus className="h-4 w-4" />
-            Add Equipment
+            {t('hive:equipment.table.addEquipment', {
+              defaultValue: 'Add Equipment',
+            })}
           </Button>
         </div>
       )}
@@ -512,7 +515,11 @@ export const EquipmentTable = ({
         <div className="bg-muted/20 rounded-md p-4 border-2 border-dashed border-muted-foreground/25">
           <div className="grid grid-cols-7 gap-4 items-end">
             <div className="space-y-2">
-              <label className="text-xs font-medium">Equipment Name</label>
+              <label className="text-xs font-medium">
+                {t('hive:equipment.table.equipmentName', {
+                  defaultValue: 'Equipment Name',
+                })}
+              </label>
               <Input
                 value={newItemData.name}
                 onChange={e =>
@@ -604,7 +611,9 @@ export const EquipmentTable = ({
                 ) : (
                   <Save className="h-3 w-3" />
                 )}
-                Save
+                {t('hive:equipment.table.save', {
+                  defaultValue: 'Save',
+                })}
               </Button>
               <Button
                 size="sm"
@@ -622,12 +631,36 @@ export const EquipmentTable = ({
       {/* Table Header */}
       <div className="grid grid-cols-7 gap-4 pb-3 border-b font-semibold text-sm">
         <div>Equipment</div>
-        <div className="text-center">In Use</div>
-        <div className="text-center">Per Hive</div>
-        <div className="text-center">Extra</div>
-        <div className="text-center">Needed</div>
-        <div className="text-center">Status</div>
-        <div className="text-center">Actions</div>
+        <div className="text-center">
+          {t('hive:equipment.table.inUse', {
+            defaultValue: 'In Use',
+          })}
+        </div>
+        <div className="text-center">
+          {t('hive:equipment.table.perHive', {
+            defaultValue: 'Per Hive',
+          })}
+        </div>
+        <div className="text-center">
+          {t('hive:equipment.table.extra', {
+            defaultValue: 'Extra',
+          })}
+        </div>
+        <div className="text-center">
+          {t('hive:equipment.table.needed', {
+            defaultValue: 'Needed',
+          })}
+        </div>
+        <div className="text-center">
+          {t('hive:equipment.table.status', {
+            defaultValue: 'Status',
+          })}
+        </div>
+        <div className="text-center">
+          {t('hive:equipment.table.actions', {
+            defaultValue: 'Actions',
+          })}
+        </div>
       </div>
 
       {categoryOrder.map(category => {
