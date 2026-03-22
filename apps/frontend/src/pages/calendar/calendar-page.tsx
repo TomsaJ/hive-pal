@@ -335,7 +335,6 @@ export const CalendarPage = () => {
                             date: formatDayHeader(day),
                             defaultValue: "{format(day, 'EEEE, MMMM d')}",
                           })}
-
                           {isToday && (
                             <Badge variant="outline" className="text-xs">
                               {t('common:calendar.today', {

@@ -23,7 +23,10 @@
     "allHarvests": "Alle Ernten",
     "reports": "Berichte",
     "metrics": "Kennzahlen",
-    "files": "Dateien"
+    "files": "Dateien",
+    "calendar": "Kalender",
+    "equipment": "Bestand",
+    "actions": "Aktionen"
   },
   "actions": {
     "save": "Speichern",
@@ -192,7 +195,10 @@
     "previousDay": "Gestern",
     "nextDay": "Morgen",
     "nextWeek": "Nächste Woche",
-    "dayHeader": "{{date}}"
+    "dayHeader": "{{date}}",
+    "noEvents": "Keine Events",
+    "overdueInspections": "Überfällige Inspektionen ({{overdueInspectionsSize}})",
+    "viewInspection": "Inspektion anzeigen"
   },
   "quickAdd": {
     "title": "Eintrag hinzufügen",
