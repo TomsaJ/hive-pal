@@ -1,3 +1,4 @@
+import { de, enGB, type Locale } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Calendar } from '@/components/ui/calendar';
@@ -34,8 +35,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
+const localeMap: Record<string, Locale> = {
+  de: de,
+  en: enGB,
+};
+
 export const CalendarPage = () => {
-  const { t } = useTranslation('common');
+  const { t, i18n } = useTranslation('common');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { activeApiaryId } = useApiaryStore();
 
@@ -216,13 +222,34 @@ export const CalendarPage = () => {
     handleNextWeek,
   ]);
 
+  const formatLongDate = (date: Date) =>
+    new Intl.DateTimeFormat(i18n.language, {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date);
+
+  const formatDayHeader = (date: Date) =>
+    new Intl.DateTimeFormat(i18n.language, {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    }).format(date);
+
+  const dateLocale = localeMap[i18n.language] ?? enGB;
+
   return (
     <PageGrid>
       <MainContent>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">
-              {format(selectedDate, 'EEEE, MMMM d, yyyy')} - 7 Day View
+              {t('common:calendar.sevenDayViewTitle', {
+                date: formatLongDate(selectedDate),
+                defaultValue:
+                  "{format(selectedDate, 'EEEE, MMMM d, yyyy')} - 7 Day View", //{{date}} - 7 Day View",
+              })}
             </h1>
             <div className="flex items-center gap-2">
               <Button
@@ -232,7 +259,9 @@ export const CalendarPage = () => {
                 className="flex items-center gap-1"
               >
                 <ChevronLeft className="h-4 w-4" />
-                Previous Week
+                {t('common:calendar.previousWeek', {
+                  defaultValue: 'Previous Week',
+                })}
               </Button>
               <Button
                 variant="outline"
@@ -241,14 +270,18 @@ export const CalendarPage = () => {
                 className="flex items-center gap-1"
               >
                 <ChevronLeft className="h-4 w-4" />
-                Previous Day
+                {t('common:calendar.previousDay', {
+                  defaultValue: 'Previous Day',
+                })}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setSelectedDate(new Date())}
               >
-                Today
+                {t('common:calendar.today', {
+                  defaultValue: 'Today',
+                })}
               </Button>
               <Button
                 variant="outline"
@@ -256,7 +289,9 @@ export const CalendarPage = () => {
                 onClick={handleNextDay}
                 className="flex items-center gap-1"
               >
-                Next Day
+                {t('common:calendar.nextDay', {
+                  defaultValue: 'Next Day',
+                })}
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <Button
@@ -265,7 +300,9 @@ export const CalendarPage = () => {
                 onClick={handleNextWeek}
                 className="flex items-center gap-1"
               >
-                Next Week
+                {t('common:calendar.nextWeek', {
+                  defaultValue: 'Next Week',
+                })}
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -290,10 +327,16 @@ export const CalendarPage = () => {
                     <CardHeader className="pb-3">
                       <CardTitle className="text-lg flex items-center justify-between">
                         <span className="flex items-center gap-2">
-                          {format(day, 'EEEE, MMMM d')}
+                          {t('common:calendar.dayHeader', {
+                            date: formatDayHeader(day),
+                            defaultValue: "{format(day, 'EEEE, MMMM d')}",
+                          })}
+
                           {isToday && (
                             <Badge variant="outline" className="text-xs">
-                              Today
+                              {t('common:calendar.today', {
+                                defaultValue: 'Today',
+                              })}
                             </Badge>
                           )}
                         </span>
@@ -319,7 +362,9 @@ export const CalendarPage = () => {
                     <CardContent className="pt-0">
                       {totalEvents === 0 ? (
                         <p className="text-sm text-muted-foreground">
-                          No events scheduled
+                          {t('common:calendar.noEventsScheduled', {
+                            defaultValue: 'No events scheduled',
+                          })}
                         </p>
                       ) : (
                         <div className="space-y-3">
@@ -426,13 +471,16 @@ export const CalendarPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm">
               <CalendarIcon className="h-4 w-4" />
-              Calendar
+              {t('common:calendar.title', {
+                defaultValue: 'Calendar',
+              })}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Calendar
               mode="single"
               selected={selectedDate}
+              locale={dateLocale}
               onSelect={(date: Date | undefined) => {
                 if (date) {
                   setSelectedDate(date);
