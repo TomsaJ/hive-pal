@@ -9,6 +9,7 @@ import {
   CalendarPlus,
 } from 'lucide-react';
 import { bee } from '@lucide/lab';
+import { useTranslation } from 'react-i18next';
 
 import { SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { AlertItem } from '@/components/alerts';
@@ -33,6 +34,7 @@ export const ActionSideBar: React.FC<ActionSideBarProps> = ({
   onRefreshData,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation(['hive', 'inspection']);
   const { data: hive } = useHive(hiveId || '', { enabled: !!hiveId });
 
   return (
@@ -56,10 +58,14 @@ export const ActionSideBar: React.FC<ActionSideBarProps> = ({
       <WeatherForecastSection apiaryId={hive?.apiaryId} compact />
 
       <ActionSidebarContainer>
-        <ActionSidebarGroup title="Hive Actions">
+        <ActionSidebarGroup
+          title={t('hive:actions.title', { defaultValue: 'Hive Actions' })}
+        >
           <MenuItemButton
             icon={<PlusCircle className="h-4 w-4" />}
-            label="Add Inspection"
+            label={t('inspection:actions.addInspection', {
+              defaultValue: 'Add Inspection',
+            })}
             onClick={() =>
               hiveId && navigate(`/hives/${hiveId}/inspections/create`)
             }
@@ -68,29 +74,38 @@ export const ActionSideBar: React.FC<ActionSideBarProps> = ({
           />
           <MenuItemButton
             icon={<CalendarPlus className="h-4 w-4" />}
-            label="Schedule Inspection"
+            label={t('inspection:actions.scheduleInspection', {
+              defaultValue: 'Schedule Inspection',
+            })}
             onClick={() => navigate(`/inspections/schedule`)}
             tooltip="Schedule Inspection"
           />
           <MenuItemButton
             icon={<Icon iconNode={bee} className="h-4 w-4" />}
-            label="Add Queen"
+            label={t('hive:actions.addQueen', {
+              defaultValue: 'Add Queen',
+            })}
             onClick={() => hiveId && navigate(`/hives/${hiveId}/queens/create`)}
             tooltip="Add Queen"
             disabled={!hiveId}
           />
           <MenuItemButton
             icon={<RefreshCw className="h-4 w-4" />}
-            label="Refresh Data"
+            label={t('hive:actions.refreshData', {
+              defaultValue: 'Refresh Data',
+            })}
             onClick={() => onRefreshData?.()}
             tooltip="Refresh Data"
           />
         </ActionSidebarGroup>
 
-        <ActionSidebarGroup title="Manage Hive" className="mt-4">
+        <ActionSidebarGroup
+          title={t('hive:manage.title', { defaultValue: 'Manage Hive' })}
+          className="mt-4"
+        >
           <MenuItemButton
             icon={<EditIcon className="h-4 w-4" />}
-            label="Edit Hive"
+            label={t('hive:edit.title', { defaultValue: 'Edit Hive' })}
             onClick={() => hiveId && navigate(`/hives/${hiveId}/edit`)}
             tooltip="Edit Hive"
             disabled={!hiveId}
@@ -109,13 +124,15 @@ export const ActionSideBar: React.FC<ActionSideBarProps> = ({
               <LlmPromptDialog hiveId={hiveId} hiveName={hive.name} />
             ) : (
               <SidebarMenuButton disabled tooltip="LLM Prompt">
-                <span>LLM Prompt</span>
+                <span>
+                  {t('hive:manage.llmPrompt', { defaultValue: 'LLM Prompt' })}
+                </span>
               </SidebarMenuButton>
             )}
           </SidebarMenuItem>
           <MenuItemButton
             icon={<TrashIcon className="h-4 w-4" />}
-            label="Remove Hive"
+            label={t('hive:manage.removeHive', { defaultValue: 'Remove Hive' })}
             onClick={() => alert('Remove functionality coming soon')}
             tooltip="Remove Hive"
             disabled={!hiveId}

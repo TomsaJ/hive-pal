@@ -181,9 +181,18 @@
     "activeAlert": "Active Alert"
   },
   "calendar": {
+    "title": "Calendar",
     "both": "Both",
     "inspections": "Inspections",
-    "actions": "Actions"
+    "actions": "Actions",
+    "today": "Today",
+    "noEventsScheduled": "No events scheduled",
+    "sevenDayViewTitle": "{{date}} - 7 Day View",
+    "previousWeek": "Previous Week",
+    "previousDay": "Previous Day",
+    "nextDay": "Next Day",
+    "nextWeek": "Next Week",
+    "dayHeader": "{{date}}"
   },
   "quickAdd": {
     "title": "Add Entry",

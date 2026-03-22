@@ -114,6 +114,7 @@
     "archived": "Archived"
   },
   "actions": {
+    "title": "Hive Actions",
     "inspect": "Inspect",
     "addBox": "Add Box",
     "removeBox": "Remove Box",
@@ -127,6 +128,11 @@
     "share": "Share Hive List",
     "dataOptions": "Data Options",
     "createNewHive": "Create New Hive"
+  },
+  "manage": {
+    "title": "Manage Hive",
+    "llmPrompt": "LLM Prompt",
+    "removeHive": "Remove Hive"
   },
   "form": {
     "selectHive": "Select a hive",

@@ -97,6 +97,7 @@
   "actions": {
     "details": "Details",
     "createInspection": "Inspektion erstellen",
+    "addInspection": "Inspektion hinzufügen",
     "scheduleInspection": "Inspektion planen",
     "refreshData": "Daten aktualisieren",
     "exportCSV": "Als CSV exportieren",

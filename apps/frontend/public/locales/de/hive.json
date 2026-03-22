@@ -114,6 +114,7 @@
     "archived": "Archiviert"
   },
   "actions": {
+    "title": "Aktionen Bienenstock",
     "inspect": "Inspektion durchführen",
     "addBox": "Zarge hinzufügen",
     "removeBox": "Zarge entfernen",
@@ -127,6 +128,11 @@
     "share": "Bienenstockliste teilen",
     "dataOptions": "Datenoptionen",
     "createNewHive": "Neuen Bienenstock erstellen"
+  },
+  "manage": {
+    "title": "Bienenstockverwaltung",
+    "llmPrompt": "Anweisung für LLM",
+    "removeHive": "Bienenstock entfernen"
   },
   "form": {
     "selectHive": "Bienenstock auswählen",
