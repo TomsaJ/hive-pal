@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 import { Separator } from '@/components/ui/separator';
 import { EquipmentTable } from './components/equipment-table';
 import { ShoppingList } from './components/shopping-list';
+import { useTranslation } from 'react-i18next';
 
 const StatsCards = ({ planData }: { planData: EquipmentPlan }) => {
   const totalNeeded = planData.items.reduce(
@@ -26,6 +27,7 @@ const StatsCards = ({ planData }: { planData: EquipmentPlan }) => {
       sum + (item.toPurchase && item.toPurchase > 0 ? item.toPurchase : 0),
     0,
   );
+  const { t } = useTranslation('hives');
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -34,7 +36,11 @@ const StatsCards = ({ planData }: { planData: EquipmentPlan }) => {
           <Package className="h-8 w-8 text-blue-600 mr-4" />
           <div>
             <p className="text-2xl font-bold">{planData.currentHives}</p>
-            <p className="text-sm text-muted-foreground">Current Hives</p>
+            <p className="text-sm text-muted-foreground">
+              {t('hive:equipment.currentHives', {
+                defaultValue: 'Current Hives',
+              })}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -44,7 +50,11 @@ const StatsCards = ({ planData }: { planData: EquipmentPlan }) => {
           <Target className="h-8 w-8 text-green-600 mr-4" />
           <div>
             <p className="text-2xl font-bold">{planData.targetHives}</p>
-            <p className="text-sm text-muted-foreground">Target Hives</p>
+            <p className="text-sm text-muted-foreground">
+              {t('hive:equipment.targetHives', {
+                defaultValue: 'Target Hives',
+              })}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -54,7 +64,11 @@ const StatsCards = ({ planData }: { planData: EquipmentPlan }) => {
           <ShoppingCart className="h-8 w-8 text-orange-600 mr-4" />
           <div>
             <p className="text-2xl font-bold">{totalNeeded}</p>
-            <p className="text-sm text-muted-foreground">Items Needed</p>
+            <p className="text-sm text-muted-foreground">
+              {t('hive:equipment.itemsNeeded', {
+                defaultValue: 'Items Needed',
+              })}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -72,50 +86,68 @@ const EquipmentActionSidebar = ({
   multiplier: number;
   onMultiplierChange: (value: number) => void;
   isUpdatingMultiplier: boolean;
-}) => (
-  <div className="space-y-6">
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Wrench className="h-5 w-5" />
-          Equipment Management
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Button onClick={onRefresh} className="w-full">
-          Refresh Data
-        </Button>
-        <Button variant="outline" className="w-full" asChild>
-          <Link to="/equipment/settings">Equipment Settings</Link>
-        </Button>
-        <Separator />
-        <div className="space-y-3">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Target Multiplier</label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                value={multiplier}
-                onChange={e =>
-                  onMultiplierChange(parseFloat(e.target.value) || 1)
-                }
-                min="0.1"
-                max="10"
-                step="0.1"
-                className="w-20 text-center"
-                disabled={isUpdatingMultiplier}
-              />
-              <span className="text-xs text-muted-foreground">×</span>
+}) => {
+  const { t } = useTranslation('hives');
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wrench className="h-5 w-5" />
+            {t('hive:equipment.equipmentManagement', {
+              defaultValue: 'Equipment Management',
+            })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button onClick={onRefresh} className="w-full">
+            {t('hive:actions.refreshData', {
+              defaultValue: 'Refresh Data',
+            })}
+          </Button>
+          <Button variant="outline" className="w-full" asChild>
+            <Link to="/equipment/settings">
+              {t('hive:equipment.equipmentSettings', {
+                defaultValue: 'Equipment Settings',
+              })}
+            </Link>
+          </Button>
+          <Separator />
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                {t('hive:equipment.targetMultiplier', {
+                  defaultValue: 'Target Multiplier',
+                })}
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={multiplier}
+                  onChange={e =>
+                    onMultiplierChange(parseFloat(e.target.value) || 1)
+                  }
+                  min="0.1"
+                  max="10"
+                  step="0.1"
+                  className="w-20 text-center"
+                  disabled={isUpdatingMultiplier}
+                />
+                <span className="text-xs text-muted-foreground">×</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t('hive:equipment.targetMultiplierResult', {
+                  multiplier: multiplier,
+                  defaultValue: 'Target Hives = Current × {multiplier}',
+                })}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Target Hives = Current × {multiplier}
-            </p>
           </div>
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-);
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 const SaveChangesSection = ({
   hasChanges,
@@ -128,19 +160,23 @@ const SaveChangesSection = ({
   onSave: () => void;
   isPending: boolean;
 }) => {
+  const { t } = useTranslation('hives');
   if (!hasChanges) return null;
-
   return (
     <Card>
       <CardContent className="py-4">
         <div className="flex justify-center">
           <div className="space-x-4">
             <Button variant="outline" onClick={onCancel}>
-              Cancel Changes
+              {t('hive:equipment.cancelChanges', {
+                defaultValue: 'Cancel Changes',
+              })}
             </Button>
             <Button onClick={onSave} disabled={isPending} size="lg">
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save All Changes
+              {t('hive:equipment.saveAllChanges', {
+                defaultValue: 'Save All Changes',
+              })}
             </Button>
           </div>
         </div>
@@ -311,7 +347,7 @@ export const EquipmentPlanningPage = () => {
   };
 
   const hasChanges = localItems.length > 0;
-
+  const { t } = useTranslation('hives');
   return (
     <PageGrid>
       <MainContent>
@@ -322,9 +358,16 @@ export const EquipmentPlanningPage = () => {
           {/* Unified Equipment Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Equipment Planning Overview</CardTitle>
+              <CardTitle>
+                {t('hive:equipment.equipmentPlanningOverview', {
+                  defaultValue: 'Equipment Planning Overview',
+                })}
+              </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Track your current equipment and plan for seasonal expansion
+                {t('hive:equipment.trackCurrentEquipment', {
+                  defaultValue:
+                    'Track your current equipment and plan for seasonal expansion',
+                })}
               </p>
             </CardHeader>
             <CardContent>

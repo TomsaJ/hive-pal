@@ -154,5 +154,29 @@
     "unpositionedHives": "Unpositioned Hives",
     "noHivesInApiary": "No hives in this apiary yet.",
     "dragToOrganize": "Add hives and drag them to the grid above to organize your apiary layout."
+  },
+  "equipment": {
+    "currentHives": "Current Hives",
+    "targetHives": "Target Hives",
+    "itemsNeeded": "Items Needed",
+    "equipmentManagement": "Equipment Management",
+    "equipmentSettings": "Equipment Settings",
+    "targetMultiplier": "Target Multiplier",
+    "targetMultiplierResult": "Target Hives = Current × {{multiplier}}",
+    "cancelChanges": "Cancel Changes",
+    "saveAllChanges": "Save All Changes",
+    "equipmentPlanningOverview": "Equipment Planning Overview",
+    "trackCurrentEquipment": "Track your current equipment and plan for seasonal expansion",
+    "table":{
+      "addEquipment": "Add Equipment",
+      "equipmentName": "Equipment Name",
+      "save": "Save",
+      "inUse": "In Use",
+      "perHive": "Per Hive",
+      "extra": "Extra",
+      "needed": "Needed",
+      "status": "Status",
+      "actions": "Actions"
+    }
   }
 }
