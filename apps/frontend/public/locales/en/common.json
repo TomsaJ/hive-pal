@@ -346,6 +346,7 @@
     "widget": {
       "title": "Apiary Statistics",
       "viewReports": "View Reports",
+      "apiaryDetails": "Apiary Details",
       "noApiary": "Select an apiary to view statistics"
     }
   }
