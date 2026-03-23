@@ -33,6 +33,139 @@ import {
 } from '@/components/ui/dialog';
 import { useTranslation } from 'react-i18next';
 
+// Status Badge Component - Eliminates duplicate badge rendering
+interface StatusBadgeProps {
+  needsToPurchase: boolean;
+  hasSurplus: boolean;
+  toPurchase: number;
+  total: number;
+  inUse: number;
+  extra: number;
+}
+
+const StatusBadge = ({
+  needsToPurchase,
+  hasSurplus,
+  toPurchase,
+  total,
+  inUse,
+  extra,
+}: StatusBadgeProps) => {
+  if (needsToPurchase) {
+    return <Badge variant="destructive">Need {toPurchase}</Badge>;
+  }
+  if (hasSurplus) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="secondary" className="cursor-help">
+              +{Math.abs(toPurchase)} surplus
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Surplus: {Math.abs(toPurchase)} extra</p>
+            <p className="text-xs text-muted-foreground">
+              Total: {total} (In use: {inUse} + Extra: {extra})
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+  return <Badge variant="outline">Exact</Badge>;
+};
+
+// Needed Column with Tooltip Component - Eliminates duplicate tooltip rendering
+interface NeededWithTooltipProps {
+  needed: number;
+  recommended: number;
+  perHive: number;
+  isOverridden: boolean;
+  onReset?: () => void;
+}
+
+const NeededWithTooltip = ({
+  needed,
+  recommended,
+  perHive,
+  isOverridden,
+  onReset,
+}: NeededWithTooltipProps) => (
+  <div className="text-center flex items-center justify-center gap-1">
+    <span className={cn(isOverridden && 'text-blue-600 font-medium')}>
+      {needed}
+    </span>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info className="h-3 w-3 text-muted-foreground" />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Recommended: {recommended}</p>
+          <p className="text-xs text-muted-foreground">
+            Based on {perHive} per hive
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+    {isOverridden && (
+      <Button
+        size="icon"
+        variant="ghost"
+        className="h-6 w-6"
+        onClick={onReset}
+      >
+        <RotateCcw className="h-3 w-3" />
+      </Button>
+    )}
+  </div>
+);
+
+// Delete Confirmation Dialog Component - Eliminates duplicate dialog code
+interface DeleteDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  itemName: string;
+  onConfirm: () => Promise<void>;
+  isDeleting: boolean;
+}
+
+const DeleteDialog = ({
+  open,
+  onOpenChange,
+  itemName,
+  onConfirm,
+  isDeleting,
+}: DeleteDialogProps) => (
+  <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Delete Equipment Item</DialogTitle>
+        <DialogDescription>
+          Are you sure you want to delete "{itemName}"? This action cannot be
+          undone.
+        </DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
+        <Button
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={onConfirm}
+          variant="destructive"
+          disabled={isDeleting}
+        >
+          {isDeleting ? 'Deleting...' : 'Delete'}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+);
+
 interface EquipmentRowProps {
   item: EquipmentItemWithCalculations;
   onExtraChange: (value: number) => void;
@@ -221,27 +354,14 @@ export const EquipmentRow = ({
           </TooltipProvider>
         </div>
         <div className="text-center">
-          {needsToPurchase ? (
-            <Badge variant="destructive">Need {toPurchase}</Badge>
-          ) : hasSurplus ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge variant="secondary" className="cursor-help">
-                    +{Math.abs(toPurchase)} surplus
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Surplus: {Math.abs(toPurchase)} extra</p>
-                  <p className="text-xs text-muted-foreground">
-                    Total: {total} (In use: {inUse} + Extra: {extra})
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : (
-            <Badge variant="outline">Exact</Badge>
-          )}
+          <StatusBadge
+            needsToPurchase={needsToPurchase}
+            hasSurplus={hasSurplus}
+            toPurchase={toPurchase}
+            total={total}
+            inUse={inUse}
+            extra={extra}
+          />
         </div>
         <div className="flex items-center justify-center gap-1">
           <Button
@@ -280,56 +400,22 @@ export const EquipmentRow = ({
       <div className="text-center">{inUse}</div>
       <div className="text-center">{perHive}</div>
       <div className="text-center">{extra}</div>
-      <div className="text-center flex items-center justify-center gap-1">
-        <span className={cn(isOverridden && 'text-blue-600 font-medium')}>
-          {needed}
-        </span>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="h-3 w-3 text-muted-foreground" />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Recommended: {recommended}</p>
-              <p className="text-xs text-muted-foreground">
-                Based on {perHive} per hive
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        {isOverridden && (
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-6 w-6"
-            onClick={onResetNeeded}
-          >
-            <RotateCcw className="h-3 w-3" />
-          </Button>
-        )}
-      </div>
+      <NeededWithTooltip
+        needed={needed}
+        recommended={recommended}
+        perHive={perHive}
+        isOverridden={isOverridden}
+        onReset={onResetNeeded}
+      />
       <div className="text-center">
-        {needsToPurchase ? (
-          <Badge variant="destructive">Need {toPurchase}</Badge>
-        ) : hasSurplus ? (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge variant="secondary" className="cursor-help">
-                  +{Math.abs(toPurchase)} surplus
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Surplus: {Math.abs(toPurchase)} extra</p>
-                <p className="text-xs text-muted-foreground">
-                  Total: {total} (In use: {inUse} + Extra: {extra})
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ) : (
-          <Badge variant="outline">Exact</Badge>
-        )}
+        <StatusBadge
+          needsToPurchase={needsToPurchase}
+          hasSurplus={hasSurplus}
+          toPurchase={toPurchase}
+          total={total}
+          inUse={inUse}
+          extra={extra}
+        />
       </div>
       <div className="flex items-center justify-center gap-1">
         <Button
@@ -355,32 +441,13 @@ export const EquipmentRow = ({
                 <Trash2 className="h-3 w-3" />
               )}
             </Button>
-            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Delete Equipment Item</DialogTitle>
-                  <DialogDescription>
-                    Are you sure you want to delete "{displayName}"? This action
-                    cannot be undone.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowDeleteDialog(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleDelete}
-                    variant="destructive"
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? 'Deleting...' : 'Delete'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <DeleteDialog
+              open={showDeleteDialog}
+              onOpenChange={setShowDeleteDialog}
+              itemName={displayName}
+              onConfirm={handleDelete}
+              isDeleting={isDeleting}
+            />
           </>
         )}
       </div>
@@ -427,7 +494,7 @@ export const EquipmentTable = ({
     displayOrder: 999,
   });
 
-  const handleAddEquipment = () => {
+  const resetNewItemData = () => {
     setNewItemData({
       itemId: '',
       name: '',
@@ -438,6 +505,10 @@ export const EquipmentTable = ({
       enabled: true,
       displayOrder: 999,
     });
+  };
+
+  const handleAddEquipment = () => {
+    resetNewItemData();
     setShowAddForm(true);
   };
 
