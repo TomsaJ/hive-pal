@@ -28,7 +28,7 @@ export const ApiaryDetailPage = () => {
   const { t } = useTranslation(['apiary', 'common']);
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
-  const defaultTab = searchParams.get('tab') ?? 'overview';
+  const defaultTab = searchParams.get('tab') || 'overview';
   const { data: apiary, isLoading, refetch } = useApiary(id ?? '');
   const { data: hives = [] } = useHives({ apiaryId: id ?? '' });
 
