@@ -22,7 +22,11 @@
         "harvests": "Zbery",
         "allHarvests": "Všetky zbery",
         "reports": "Reporty",
-        "metrics": "Metriky"
+        "metrics": "Metriky",
+        "files": "Súbory",
+        "calendar": "Kalendár",
+        "equipment": "Vybavenie",
+        "actions": "Akcie"
     },
     "actions": {
         "save": "Uložiť",

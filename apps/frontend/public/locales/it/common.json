@@ -22,7 +22,11 @@
     "harvests": "Raccolti",
     "allHarvests": "Tutti i raccolti",
     "reports": "Report",
-    "metrics": "Metriche"
+    "metrics": "Metriche",
+    "files": "File",
+    "calendar": "Calendario",
+    "equipment": "Attrezzatura",
+    "actions": "Azioni"
   },
   "actions": {
     "save": "Salva",

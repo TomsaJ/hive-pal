@@ -70,7 +70,11 @@
         "harvests": "Приноси",
         "allHarvests": "Сви приноси",
         "reports": "Извештаји",
-        "metrics": "Показатељи"
+        "metrics": "Показатељи",
+        "files": "Датотеке",
+        "calendar": "Календар",
+        "equipment": "Опрема",
+        "actions": "Акције"
     },
     "messages": {
         "confirmDelete": "Да ли сте сигурни да желите да обришете ову ставку?",

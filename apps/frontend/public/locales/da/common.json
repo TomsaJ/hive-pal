@@ -70,7 +70,11 @@
         "harvests": "Høst",
         "allHarvests": "Alle høst",
         "reports": "Rapporter",
-        "metrics": "Målinger"
+        "metrics": "Målinger",
+        "files": "Filer",
+        "calendar": "Kalender",
+        "equipment": "Udstyr",
+        "actions": "Handlinger"
     },
     "messages": {
         "confirmDelete": "Er du sikker på at du vil slette denne?",
