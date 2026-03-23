@@ -87,7 +87,7 @@ export const ReportsSummaryWidget = () => {
             to={`/apiaries/${activeApiaryId}`}
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Apiary Details
+            {t('reports.widget.apiaryDetails')}
             <ArrowUpRight className="h-4 w-4" />
           </Link>
         </div>

@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Section } from '@/components/common/section';
@@ -12,6 +12,7 @@ import {
   PageGrid,
 } from '@/components/layout/page-grid-layout';
 import { useApiary, useHives } from '@/api/hooks';
+import { useApiaryStore } from '@/hooks/use-apiary';
 
 // Lazy load the map component (heavy ~200KB)
 const MapPicker = lazy(() => import('@/components/common/map-picker'));
@@ -27,10 +28,27 @@ function MapLoader() {
 export const ApiaryDetailPage = () => {
   const { t } = useTranslation(['apiary', 'common']);
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
-  const defaultTab = searchParams.get('tab') || 'overview';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { setActiveApiaryId } = useApiaryStore();
+
+  const tabParam = searchParams.get('tab');
+  const currentTab =
+    tabParam === 'overview' || tabParam === 'hives' || tabParam === 'location'
+      ? tabParam
+      : 'overview';
+
   const { data: apiary, isLoading, refetch } = useApiary(id ?? '');
   const { data: hives = [] } = useHives({ apiaryId: id ?? '' });
+
+  useEffect(() => {
+    if (id) setActiveApiaryId(id);
+  }, [id, setActiveApiaryId]);
+
+  const handleTabChange = (newTab: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', newTab);
+    setSearchParams(next);
+  };
 
   if (isLoading) {
     return <div>{t('common:status.loading')}</div>;
@@ -50,7 +68,7 @@ export const ApiaryDetailPage = () => {
           </p>
         </div>
 
-        <Tabs defaultValue={defaultTab} className="mb-6">
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="mb-6">
           <TabsList className="mb-4">
             <TabsTrigger value="overview">
               {t('apiary:detail.tabs.overview')}
@@ -87,7 +105,7 @@ export const ApiaryDetailPage = () => {
                       <span className="font-medium">
                         {t('apiary:fields.coordinates')}:
                       </span>{' '}
-                      {apiary.latitude && apiary.longitude
+                      {apiary.latitude != null && apiary.longitude != null
                         ? `${apiary.latitude.toFixed(6)}, ${apiary.longitude.toFixed(6)}`
                         : t('apiary:fields.notSpecified')}
                     </div>
@@ -99,16 +117,18 @@ export const ApiaryDetailPage = () => {
                 </CardContent>
               </Card>
 
-              {apiary.latitude && apiary.longitude && (
-                <Suspense fallback={<MapLoader />}>
-                  <MapPicker
-                    initialLocation={{
-                      lat: apiary.latitude,
-                      lng: apiary.longitude,
-                    }}
-                    readOnly
-                  />
-                </Suspense>
+              {apiary.latitude != null && apiary.longitude != null && (
+                <div className="h-96">
+                  <Suspense fallback={<MapLoader />}>
+                    <MapPicker
+                      initialLocation={{
+                        lat: apiary.latitude,
+                        lng: apiary.longitude,
+                      }}
+                      readOnly
+                    />
+                  </Suspense>
+                </div>
               )}
             </div>
 
@@ -121,16 +141,18 @@ export const ApiaryDetailPage = () => {
 
           <TabsContent value="location">
             <Section title={t('apiary:detail.apiaryLocation')}>
-              {apiary.latitude && apiary.longitude ? (
-                <Suspense fallback={<MapLoader />}>
-                  <MapPicker
-                    initialLocation={{
-                      lat: apiary.latitude,
-                      lng: apiary.longitude,
-                    }}
-                    readOnly
-                  />
-                </Suspense>
+              {apiary.latitude != null && apiary.longitude != null ? (
+                <div className="h-96">
+                  <Suspense fallback={<MapLoader />}>
+                    <MapPicker
+                      initialLocation={{
+                        lat: apiary.latitude,
+                        lng: apiary.longitude,
+                      }}
+                      readOnly
+                    />
+                  </Suspense>
+                </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   {t('apiary:detail.noCoordinates')}
