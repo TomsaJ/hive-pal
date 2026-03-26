@@ -1,4 +1,5 @@
 import * as React from 'react';
+import type { TFunction } from 'i18next';
 import {
   HomeIcon,
   PieChart,
@@ -29,48 +30,50 @@ import {
 } from '@/components/ui/sidebar';
 
 // Navigation data factory function
-const getNavData = (t: (key: string) => string) => ({
+const getNavData = (t: TFunction<'common'>) => ({
   navMain: [
     {
-      title: t('navigation.apiaries'),
+      title: t('navigation.apiaries', { defaultValue: 'Apiaries' }),
       url: '/apiaries',
       icon: MapPin,
       isActive: true,
       items: [
         {
-          title: t('navigation.allApiaries'),
+          title: t('navigation.allApiaries', { defaultValue: 'All Apiaries' }),
           url: '/apiaries',
         },
         {
-          title: t('navigation.createApiary'),
+          title: t('navigation.createApiary', { defaultValue: 'Create Apiary' }),
           url: '/apiaries/create',
         },
       ],
     },
     {
-      title: t('navigation.hives'),
+      title: t('navigation.hives', { defaultValue: 'Hives' }),
       url: '/hives',
       icon: HomeIcon,
       isActive: true,
       items: [
         {
-          title: t('navigation.allHives'),
+          title: t('navigation.allHives', { defaultValue: 'All Hives' }),
           url: '/hives',
         },
       ],
     },
     {
-      title: t('navigation.inspections'),
+      title: t('navigation.inspections', { defaultValue: 'Inspections' }),
       url: '/inspections',
       icon: PieChart,
       isActive: true,
       items: [
         {
-          title: t('navigation.allInspections'),
+          title: t('navigation.allInspections', {
+            defaultValue: 'All Inspections',
+          }),
           url: '/inspections',
         },
         {
-          title: t('navigation.schedule'),
+          title: t('navigation.schedule', { defaultValue: 'Schedule' }),
           url: '/inspections/schedule',
         },
         {
@@ -78,35 +81,35 @@ const getNavData = (t: (key: string) => string) => ({
           url: '/batch-inspections',
         },
         {
-          title: t('navigation.recent'),
+          title: t('navigation.recent', { defaultValue: 'Recent' }),
           url: '/inspections/list/recent',
         },
         {
-          title: t('navigation.upcoming'),
+          title: t('navigation.upcoming', { defaultValue: 'Upcoming' }),
           url: '/inspections/list/upcoming',
         },
       ],
     },
     {
-      title: 'Calendar',
+      title: t('navigation.calendar', { defaultValue: 'Calendar' }),
       url: '/calendar',
       icon: Calendar,
       isActive: true,
     },
     {
-      title: t('navigation.harvests'),
+      title: t('navigation.harvests', { defaultValue: 'Harvests' }),
       url: '/harvests',
       icon: Droplets,
       isActive: true,
     },
     {
-      title: t('navigation.reports'),
+      title: t('navigation.reports', { defaultValue: 'Reports' }),
       url: '/reports',
       icon: BarChart3,
       isActive: true,
     },
     {
-      title: 'Actions',
+      title: t('navigation.actions', { defaultValue: 'Actions' }),
       url: '/actions/bulk',
       icon: ClipboardList,
       isActive: true,
@@ -117,17 +120,17 @@ const getNavData = (t: (key: string) => string) => ({
       icon: FolderOpen,
     },
     {
-      title: 'Equipment',
+      title: t('navigation.equipment', { defaultValue: 'Equipment' }),
       url: '/equipment',
       icon: Package,
     },
     {
-      title: t('navigation.settings'),
+      title: t('navigation.settings', { defaultValue: 'Settings' }),
       url: '/settings',
       icon: Settings2,
     },
     {
-      title: t('feedback.sendFeedback'),
+      title: t('feedback.sendFeedback', { defaultValue: 'Send Feedback' }),
       url: 'https://github.com/martinhrvn/hive-pal/issues',
       icon: MessageSquare,
       external: true,

@@ -114,6 +114,7 @@
     "archived": "Archived"
   },
   "actions": {
+    "title": "Hive Actions",
     "inspect": "Inspect",
     "addBox": "Add Box",
     "removeBox": "Remove Box",
@@ -126,7 +127,13 @@
     "print": "Print Hive List",
     "share": "Share Hive List",
     "dataOptions": "Data Options",
-    "createNewHive": "Create New Hive"
+    "createNewHive": "Create New Hive",
+    "qr": "QR Code"
+  },
+  "manage": {
+    "title": "Manage Hive",
+    "llmPrompt": "LLM Prompt",
+    "removeHive": "Remove Hive"
   },
   "form": {
     "selectHive": "Select a hive",
@@ -148,5 +155,30 @@
     "unpositionedHives": "Unpositioned Hives",
     "noHivesInApiary": "No hives in this apiary yet.",
     "dragToOrganize": "Add hives and drag them to the grid above to organize your apiary layout."
+  },
+  "equipment": {
+    "currentHives": "Current Hives",
+    "targetHives": "Target Hives",
+    "itemsNeeded": "Items Needed",
+    "equipmentManagement": "Equipment Management",
+    "equipmentSettings": "Equipment Settings",
+    "targetMultiplier": "Target Multiplier",
+    "targetMultiplierResult": "Target Hives = Current × {{multiplier}}",
+    "cancelChanges": "Cancel Changes",
+    "saveAllChanges": "Save All Changes",
+    "equipmentPlanningOverview": "Equipment Planning Overview",
+    "trackCurrentEquipment": "Track your current equipment and plan for seasonal expansion",
+    "table":{
+      "title": "Equipment",
+      "addEquipment": "Add Equipment",
+      "equipmentName": "Equipment Name",
+      "save": "Save",
+      "inUse": "In Use",
+      "perHive": "Per Hive",
+      "extra": "Extra",
+      "needed": "Needed",
+      "status": "Status",
+      "actions": "Actions"
+    }
   }
 }
