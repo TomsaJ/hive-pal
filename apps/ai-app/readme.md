@@ -20,7 +20,9 @@ Currently the folder-setup below is expected:
                     ollama/
 ```
 
-Below is the docker yaml-File I use. Currently it runs in a completely seperate container as a "prove of concept". As i do not have a GPU in my server installed i use the OLLAMA_MODEL qwen3:8b. Whisper is currently set to auto-detect the language.
+Below is the docker yaml-File I use. Currently it runs in a completely seperate container as a "prove of concept". As i do not have a GPU in my server installed i use the OLLAMA_MODEL qwen3:8b. With this setup processing time of a 45 second audio file is about 5-10 Minutes (running on dual E5-2683 v3 and consuming about 8 GIB ram).
+
+Whisper is currently set to auto-detect the language.
 
 ```js
 services:
