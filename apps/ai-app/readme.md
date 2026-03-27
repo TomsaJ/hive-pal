@@ -12,7 +12,7 @@ Note: If you change app.py you have to restart the container.
 Currently the folder-setup below is expected:
 
 ```js
-/mnt/path/Hivepal/ai/
+/mnt/path/Hivepal/AI/
                     incoming/
                     processed/
                     transcripts/
@@ -20,7 +20,7 @@ Currently the folder-setup below is expected:
                     ollama/
 ```
 
-Below is the docker yaml-File I use. Currently it runs in a completely seperate container as a "prove of concept". As i do not have a GPU in my server installed i use the OLLAMA_MODEL qwen3:8b. With this setup processing time of a 45 second audio file is about 5-10 Minutes (running on dual E5-2683 v3 and consuming about 8 GIB ram).
+Below is the docker yaml-snippet I use. I just added it to the docker stack for hivepal so everything runs together. As i do not have a GPU in my server installed i use the OLLAMA_MODEL qwen3:8b. With this setup processing time of a 45 second audio file is about 5-10 Minutes (running on dual E5-2683 v3 and consuming about 8 GIB ram).
 
 Whisper is currently set to auto-detect the language.
 
@@ -33,7 +33,7 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - /mnt/path/HivePal/AI/ollama:/root/.ollama
+      - /mnt/path/Apps/HivePal/AI/ollama:/root/.ollama
 
   hivepal-ai:
     image: python:3.11-slim
@@ -41,25 +41,25 @@ services:
     restart: unless-stopped
     working_dir: /app
     command: >
-  		bash -lc "
-  		apt-get update &&
-  		apt-get install -y ffmpeg &&
-  		pip install --no-cache-dir flask requests faster-whisper watchdog &&
-  		python app.py
-  		"
+      bash -lc "
+      apt-get update &&
+      apt-get install -y ffmpeg &&
+      pip install --no-cache-dir flask requests faster-whisper watchdog &&
+      python app.py
+      "
     ports:
       - "8008:8008"
     environment:
-      - OLLAMA_URL=http://ollama:11434/api/chat
-      - OLLAMA_MODEL=qwen3:8b
-      - WHISPER_MODEL=small
-      - WHISPER_COMPUTE_TYPE=int8
-      - AUDIO_INPUT_DIR=/data/incoming
-      - TRANSCRIPTS_DIR=/data/transcripts
-      - OUTPUT_DIR=/data/processed
+      OLLAMA_URL: http://ollama:11434/api/chat
+      OLLAMA_MODEL: qwen3:8b
+      WHISPER_MODEL: small
+      WHISPER_COMPUTE_TYPE: int8
+      AUDIO_INPUT_DIR: /data/incoming
+      TRANSCRIPTS_DIR: /data/transcripts
+      OUTPUT_DIR: /data/processed
     volumes:
-      - /mnt/path/HivePal/AI:/data
-      - /mnt/path/HivePal/AI/app:/app
+      - /mnt/path/Apps/HivePal/AI:/data
+      - /mnt/path/Apps/HivePal/AI/app:/app
     depends_on:
       - ollama
 ```
