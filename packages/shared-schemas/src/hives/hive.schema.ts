@@ -27,6 +27,7 @@ export const createHiveSchema = z.object({
   positionCol: z.number().int().min(0).optional(),
   settings: hiveSettingsSchema,
   boxes: z.array(boxSchema).optional(),
+  featurePhotoId: z.string().uuid().nullish(),
 });
 
 export const createHiveResponseSchema = z.object({
@@ -49,6 +50,8 @@ export const updateHiveResponseSchema = z.object({
   positionRow: z.number().int().min(0).optional(),
   positionCol: z.number().int().min(0).optional(),
   settings: hiveSettingsSchema,
+  featurePhotoId: z.string().uuid().nullish(),
+  featurePhotoUrl: z.string().nullish(),
 });
 
 export const hiveScoreSchema = z.object({
@@ -70,6 +73,7 @@ export const hiveDetailResponseSchema = createHiveSchema.extend({
   lastInspectionDate: z.string().datetime().or(z.date()).optional(),
   settings: hiveSettingsSchema,
   alerts: z.array(alertResponseSchema).default([]),
+  featurePhotoUrl: z.string().nullish(),
 });
 
 // Schema for basic hive response
@@ -87,6 +91,8 @@ export const hiveResponseSchema = z.object({
   boxes: z.array(boxSchema).optional(),
   settings: hiveSettingsSchema,
   alerts: z.array(alertResponseSchema).default([]),
+  featurePhotoId: z.string().uuid().nullish(),
+  featurePhotoUrl: z.string().nullish(),
 });
 
 // Schema for hive response with boxes (for apiary layout)

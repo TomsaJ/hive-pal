@@ -62,7 +62,7 @@
     "selectBroodPattern": "Select brood pattern",
     "broodPatternOptions": {
       "solid": "Solid",
-      "spotty": "Spotty", 
+      "spotty": "Spotty",
       "scattered": "Scattered",
       "patchy": "Patchy",
       "excellent": "Excellent",
@@ -97,6 +97,7 @@
   "actions": {
     "details": "Details",
     "createInspection": "Create Inspection",
+    "addInspection": "Add Inspection",
     "scheduleInspection": "Schedule Inspection",
     "refreshData": "Refresh Data",
     "exportCSV": "Export to CSV",

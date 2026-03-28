@@ -114,6 +114,7 @@
     "archived": "Archiviert"
   },
   "actions": {
+    "title": "Aktionen Bienenstock",
     "inspect": "Inspektion durchführen",
     "addBox": "Zarge hinzufügen",
     "removeBox": "Zarge entfernen",
@@ -126,7 +127,13 @@
     "print": "Bienenstockliste drucken",
     "share": "Bienenstockliste teilen",
     "dataOptions": "Datenoptionen",
-    "createNewHive": "Neuen Bienenstock erstellen"
+    "createNewHive": "Neuen Bienenstock erstellen",
+    "qr": "QR Code"
+  },
+  "manage": {
+    "title": "Bienenstockverwaltung",
+    "llmPrompt": "Anweisung für LLM",
+    "removeHive": "Bienenstock entfernen"
   },
   "form": {
     "selectHive": "Bienenstock auswählen",
@@ -148,5 +155,30 @@
     "unpositionedHives": "Nicht platzierte Bienenstöcke",
     "noHivesInApiary": "Noch keine Bienenstöcke in diesem Bienenstand vorhanden.",
     "dragToOrganize": "Fügen Sie Bienenstöcke hinzu und ziehen Sie sie in das Raster oben, um Ihren Bienenstand zu organisieren."
+  },
+  "equipment":{
+    "currentHives": "Aktuelle Bienenstöcke",
+    "targetHives": "Soll-Bienenstöcke",
+    "itemsNeeded": "Benötigte Artikel",
+    "equipmentManagement": "Bestandsverwaltung",
+    "equipmentSettings": "Bestandseinstellungen",
+    "targetMultiplier": "Soll-Multiplikator",
+    "targetMultiplierResult": "Soll-Bienenstöcke = Aktuell × {{multiplier}}",
+    "cancelChanges": "Änderungen verwerfen",
+    "saveAllChanges": "Alle Änderungen speichern",
+    "equipmentPlanningOverview": "Übersicht über die Ausstattungsplanung",
+    "trackCurrentEquipment": "Behalte den Überblick über deinen aktuellen Bestand und plane deine saisonalen Erweiterungen",
+    "table":{
+      "title": "Ausstattung",
+      "addEquipment": "Ausstattung hinzufügen",
+      "equipmentName": "Ausstattungsname",
+      "save": "Speichern",
+      "inUse": "In Verwendung",
+      "perHive": "Pro Bienenstock",
+      "extra": "Extra",
+      "needed": "Erforderlich",
+      "status": "Status",
+      "actions": "Aktionen"
+    }
   }
 }

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@/prisma/client';
 import { CustomLoggerService } from '../logger/logger.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { FileUploadService } from '../storage/file-upload.service';
 import { ApiaryResponse, CreateApiary, UpdateApiary } from 'shared-schemas';
 
 @Injectable()
@@ -9,8 +10,28 @@ export class ApiariesService {
   constructor(
     private prisma: PrismaService,
     private logger: CustomLoggerService,
+    private fileUpload: FileUploadService,
   ) {
     this.logger.setContext('ApiariesService');
+  }
+
+  private async mapFeaturePhotoUrl(
+    featurePhoto: { id: string; storageKey: string } | null,
+  ): Promise<{
+    featurePhotoId: string | null;
+    featurePhotoUrl: string | null;
+  }> {
+    if (!featurePhoto) {
+      return { featurePhotoId: null, featurePhotoUrl: null };
+    }
+    try {
+      const { downloadUrl } = await this.fileUpload.getDownloadUrl(
+        featurePhoto.storageKey,
+      );
+      return { featurePhotoId: featurePhoto.id, featurePhotoUrl: downloadUrl };
+    } catch {
+      return { featurePhotoId: featurePhoto.id, featurePhotoUrl: null };
+    }
   }
 
   async create(
@@ -25,13 +46,20 @@ export class ApiariesService {
       location: createApiaryDto.location ?? null,
       latitude: createApiaryDto.latitude,
       longitude: createApiaryDto.longitude,
+      featurePhotoId: createApiaryDto.featurePhotoId ?? null,
       userId,
     };
     const apiary = await this.prisma.apiary.create({
       data: apiaryData,
+      include: {
+        featurePhoto: { select: { id: true, storageKey: true } },
+      },
     });
 
     this.logger.log(`Apiary created with ID: ${apiary.id}`);
+    const featurePhotoFields = await this.mapFeaturePhotoUrl(
+      apiary.featurePhoto,
+    );
 
     return {
       id: apiary.id,
@@ -39,6 +67,7 @@ export class ApiariesService {
       location: apiary.location,
       latitude: apiary.latitude,
       longitude: apiary.longitude,
+      ...featurePhotoFields,
     };
   }
 
@@ -49,16 +78,27 @@ export class ApiariesService {
       where: {
         userId,
       },
+      include: {
+        featurePhoto: { select: { id: true, storageKey: true } },
+      },
     });
 
     this.logger.log(`Found ${apiaries.length} apiaries for user ${userId}`);
-    return apiaries.map((apiary) => ({
-      id: apiary.id,
-      name: apiary.name,
-      location: apiary.location,
-      latitude: apiary.latitude,
-      longitude: apiary.longitude,
-    }));
+    return Promise.all(
+      apiaries.map(async (apiary) => {
+        const featurePhotoFields = await this.mapFeaturePhotoUrl(
+          apiary.featurePhoto,
+        );
+        return {
+          id: apiary.id,
+          name: apiary.name,
+          location: apiary.location,
+          latitude: apiary.latitude,
+          longitude: apiary.longitude,
+          ...featurePhotoFields,
+        };
+      }),
+    );
   }
 
   async findOne(apiaryId: string, userId: string): Promise<ApiaryResponse> {
@@ -69,6 +109,9 @@ export class ApiariesService {
         id: apiaryId,
         userId,
       },
+      include: {
+        featurePhoto: { select: { id: true, storageKey: true } },
+      },
     });
 
     if (!apiary) {
@@ -78,12 +121,17 @@ export class ApiariesService {
       this.logger.debug(`Found apiary: ${apiary.name}`);
     }
 
+    const featurePhotoFields = await this.mapFeaturePhotoUrl(
+      apiary.featurePhoto,
+    );
+
     return {
       id: apiary.id,
       name: apiary.name,
       location: apiary.location,
       latitude: apiary.latitude,
       longitude: apiary.longitude,
+      ...featurePhotoFields,
     };
   }
 
@@ -99,15 +147,23 @@ export class ApiariesService {
       const updatedApiary = await this.prisma.apiary.update({
         where: { id, userId },
         data: updateApiaryDto,
+        include: {
+          featurePhoto: { select: { id: true, storageKey: true } },
+        },
       });
 
       this.logger.log(`Apiary ${id} updated successfully`);
+      const featurePhotoFields = await this.mapFeaturePhotoUrl(
+        updatedApiary.featurePhoto,
+      );
+
       return {
         id: updatedApiary.id,
         name: updatedApiary.name,
         location: updatedApiary.location,
         latitude: updatedApiary.latitude,
         longitude: updatedApiary.longitude,
+        ...featurePhotoFields,
       };
     } catch (error: unknown) {
       this.logger.error(

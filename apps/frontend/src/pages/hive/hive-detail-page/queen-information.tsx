@@ -26,11 +26,13 @@ type QueenInformationProps = {
   hiveId?: string;
   activeQueen?: ActiveQueen | null;
   onQueenUpdated?: () => void;
+  variant?: 'card' | 'inline';
 };
 export const QueenInformation: React.FC<QueenInformationProps> = ({
   activeQueen,
   hiveId,
   onQueenUpdated,
+  variant = 'card',
 }) => {
   const { t } = useTranslation('queen');
   const navigate = useNavigate();
@@ -72,6 +74,146 @@ export const QueenInformation: React.FC<QueenInformationProps> = ({
       </DropdownMenuContent>
     </DropdownMenu>
   ) : null;
+  const mobileView = (
+    <div className="sm:hidden">
+      {activeQueen ? (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div
+              className={`h-4 w-4 rounded-full border border-gray-600 ${getColor(activeQueen?.color)}`}
+            />
+            <span className="text-sm font-medium">
+              {activeQueen?.marking} • {activeQueen?.year}
+            </span>
+            {activeQueen?.installedAt && (
+              <span className="text-xs text-muted-foreground">
+                {format(
+                  typeof activeQueen.installedAt === 'string'
+                    ? parseISO(activeQueen.installedAt)
+                    : activeQueen.installedAt,
+                  'PPP',
+                )}
+              </span>
+            )}
+          </div>
+          {activeQueen && (
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <MoreHorizontal className="h-4 w-4 text-muted-foreground cursor-pointer" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => navigate(`/queens/${activeQueen.id}/edit`)}
+                >
+                  {t('actions.editQueen')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleReplaceQueen}>
+                  {t('actions.replaceQueen')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleMarkQueenState('DEAD')}
+                >
+                  {t('actions.markAsDead')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleMarkQueenState('REPLACED')}
+                >
+                  {t('actions.markAsLostMissing')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
+            {t('information.noActiveQueen')}
+          </span>
+          <Link
+            to={`/hives/${hiveId}/queens/create`}
+            className={buttonVariants({
+              size: 'sm',
+              variant: 'ghost',
+            })}
+          >
+            <BeeIcon className="mr-2 h-4 w-4" /> {t('actions.addQueen')}
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+
+  if (variant === 'inline') {
+    return (
+      <div>
+        {mobileView}
+        <div className="hidden sm:flex items-center gap-3">
+          {activeQueen ? (
+            <>
+              <div
+                className={`h-4 w-4 rounded-full border border-gray-600 ${getColor(activeQueen?.color)}`}
+              />
+              <span className="text-sm font-medium">{activeQueen?.marking}</span>
+              <span className="text-xs text-muted-foreground">{activeQueen?.year}</span>
+              {activeQueen?.installedAt && (
+                <>
+                  <span className="text-xs text-muted-foreground">•</span>
+                  <span className="text-xs text-muted-foreground">
+                    {format(
+                      typeof activeQueen.installedAt === 'string'
+                        ? parseISO(activeQueen.installedAt)
+                        : activeQueen.installedAt,
+                      'PPP',
+                    )}
+                  </span>
+                </>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger>
+                  <MoreHorizontal className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => navigate(`/queens/${activeQueen.id}/edit`)}
+                  >
+                    {t('actions.editQueen')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleReplaceQueen}>
+                    {t('actions.replaceQueen')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleMarkQueenState('DEAD')}
+                  >
+                    {t('actions.markAsDead')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleMarkQueenState('REPLACED')}
+                  >
+                    {t('actions.markAsLostMissing')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {t('information.noActiveQueen')}
+              </span>
+              <Link
+                to={`/hives/${hiveId}/queens/create`}
+                className={buttonVariants({
+                  size: 'sm',
+                  variant: 'ghost',
+                })}
+              >
+                <BeeIcon className="mr-2 h-4 w-4" /> {t('actions.addQueen')}
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Card className="p-3 sm:p-0">

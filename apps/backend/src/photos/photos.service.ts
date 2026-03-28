@@ -30,7 +30,11 @@ export class PhotosService {
     filter: ApiaryUserFilter,
   ): Promise<PhotoResponse> {
     this.fileUpload.validateFile(file, CONFIG);
-    await this.fileUpload.validateOwnership(dto.apiaryId, filter.userId, dto.hiveId);
+    await this.fileUpload.validateOwnership(
+      dto.apiaryId,
+      filter.userId,
+      dto.hiveId,
+    );
 
     const { id, storageKey } = await this.fileUpload.uploadFile(
       file,
@@ -51,7 +55,11 @@ export class PhotosService {
       },
     });
 
-    this.logger.log({ message: 'Photo created', photoId: id, apiaryId: dto.apiaryId });
+    this.logger.log({
+      message: 'Photo created',
+      photoId: id,
+      apiaryId: dto.apiaryId,
+    });
     return this.mapToResponse(photo);
   }
 

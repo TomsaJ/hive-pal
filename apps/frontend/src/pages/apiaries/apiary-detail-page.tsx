@@ -1,17 +1,19 @@
-import { lazy, Suspense } from 'react';
-import { useParams } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Section } from '@/components/common/section';
 import { ApiaryActionSidebar, HivesLayout } from './components';
 import { CalendarSubscriptionCard } from './components/calendar-subscription-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ImagePlus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   MainContent,
   PageAside,
   PageGrid,
 } from '@/components/layout/page-grid-layout';
-import { useApiary } from '@/api/hooks';
+import { useApiary, useHives } from '@/api/hooks';
+import { useApiaryStore } from '@/hooks/use-apiary';
 
 // Lazy load the map component (heavy ~200KB)
 const MapPicker = lazy(() => import('@/components/common/map-picker'));
@@ -27,7 +29,27 @@ function MapLoader() {
 export const ApiaryDetailPage = () => {
   const { t } = useTranslation(['apiary', 'common']);
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { setActiveApiaryId } = useApiaryStore();
+
+  const tabParam = searchParams.get('tab');
+  const currentTab =
+    tabParam === 'overview' || tabParam === 'hives' || tabParam === 'location'
+      ? tabParam
+      : 'overview';
+
   const { data: apiary, isLoading, refetch } = useApiary(id ?? '');
+  const { data: hives = [] } = useHives({ apiaryId: id ?? '' });
+
+  useEffect(() => {
+    if (id) setActiveApiaryId(id);
+  }, [id, setActiveApiaryId]);
+
+  const handleTabChange = (newTab: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', newTab);
+    setSearchParams(next);
+  };
 
   if (isLoading) {
     return <div>{t('common:status.loading')}</div>;
@@ -47,7 +69,7 @@ export const ApiaryDetailPage = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="overview" className="mb-6">
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="mb-6">
           <TabsList className="mb-4">
             <TabsTrigger value="overview">
               {t('apiary:detail.tabs.overview')}
@@ -62,7 +84,18 @@ export const ApiaryDetailPage = () => {
 
           <TabsContent value="overview">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <Card>
+              <Card className="overflow-hidden">
+                {apiary.featurePhotoUrl ? (
+                  <img
+                    src={apiary.featurePhotoUrl}
+                    alt={`${apiary.name} feature photo`}
+                    className="w-full h-40 object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-24 bg-muted/50 flex items-center justify-center">
+                    <ImagePlus className="h-8 w-8 text-muted-foreground/30" />
+                  </div>
+                )}
                 <CardHeader>
                   <CardTitle>{t('apiary:detail.apiaryInformation')}</CardTitle>
                 </CardHeader>
@@ -84,37 +117,30 @@ export const ApiaryDetailPage = () => {
                       <span className="font-medium">
                         {t('apiary:fields.coordinates')}:
                       </span>{' '}
-                      {apiary.latitude && apiary.longitude
+                      {apiary.latitude != null && apiary.longitude != null
                         ? `${apiary.latitude.toFixed(6)}, ${apiary.longitude.toFixed(6)}`
                         : t('apiary:fields.notSpecified')}
                     </div>
                     <div>
                       <span className="font-medium">{t('hive:plural')}:</span>{' '}
-                      {0}
+                      {hives.length}
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {apiary.latitude && apiary.longitude && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{t('apiary:detail.locationMap')}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[200px]">
-                      <Suspense fallback={<MapLoader />}>
-                        <MapPicker
-                          initialLocation={{
-                            lat: apiary.latitude,
-                            lng: apiary.longitude,
-                          }}
-                          readOnly
-                        />
-                      </Suspense>
-                    </div>
-                  </CardContent>
-                </Card>
+              {apiary.latitude != null && apiary.longitude != null && (
+                <div className="h-96">
+                  <Suspense fallback={<MapLoader />}>
+                    <MapPicker
+                      initialLocation={{
+                        lat: apiary.latitude,
+                        lng: apiary.longitude,
+                      }}
+                      readOnly
+                    />
+                  </Suspense>
+                </div>
               )}
             </div>
 
@@ -127,8 +153,8 @@ export const ApiaryDetailPage = () => {
 
           <TabsContent value="location">
             <Section title={t('apiary:detail.apiaryLocation')}>
-              {apiary.latitude && apiary.longitude ? (
-                <div className="h-[400px]">
+              {apiary.latitude != null && apiary.longitude != null ? (
+                <div className="h-96">
                   <Suspense fallback={<MapLoader />}>
                     <MapPicker
                       initialLocation={{

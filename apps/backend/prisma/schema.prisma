@@ -59,6 +59,8 @@ model Apiary {
   quickChecks           QuickCheck[]
   photos                Photo[]
   documents             Document[]
+  featurePhotoId        String?             @unique
+  featurePhoto          Photo?              @relation("ApiaryFeaturePhoto", fields: [featurePhotoId], references: [id], onDelete: SetNull)
 
   // Create index for quick lookup by userId - used in authorization checks
   @@index([userId])
@@ -87,6 +89,8 @@ model Hive {
   queenMovementsTo     QueenMovement[] @relation("MovementToHive")
   photos               Photo[]
   documents            Document[]
+  featurePhotoId       String?      @unique
+  featurePhoto         Photo?       @relation("HiveFeaturePhoto", fields: [featurePhotoId], references: [id], onDelete: SetNull)
 
   // Create index for quick lookup by apiaryId - used in authorization checks
   @@index([apiaryId])
@@ -730,6 +734,9 @@ model Photo {
   date       DateTime @default(now())
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  featureOfApiary Apiary? @relation("ApiaryFeaturePhoto")
+  featureOfHive   Hive?   @relation("HiveFeaturePhoto")
 
   @@index([hiveId])
   @@index([apiaryId])
