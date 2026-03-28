@@ -29,6 +29,9 @@ model User {
   passwordResetTokens    PasswordResetToken[]
   shareLinks             ShareLink[]
   apiaryMemberships      ApiaryMember[]
+  createdInspections     Inspection[]           @relation("InspectionCreator")
+  createdActions         Action[]               @relation("ActionCreator")
+  createdQuickChecks     QuickCheck[]           @relation("QuickCheckCreator")
 
   // GDPR consent fields
   privacyPolicyConsent   Boolean                @default(false)
@@ -182,6 +185,8 @@ model Inspection {
   status            InspectionStatus @default(COMPLETED)
   batchInspectionHive BatchInspectionHive?
   audioRecordings   InspectionAudio[]
+  createdByUserId   String?
+  createdByUser     User?            @relation("InspectionCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   // Create index for quick lookup by hiveId - used in authorization checks
   @@index([hiveId])
@@ -266,6 +271,8 @@ model Action {
   frameAction     FrameAction?
   harvestAction   HarvestAction?
   boxConfigurationAction BoxConfigurationAction?
+  createdByUserId String?
+  createdByUser   User?      @relation("ActionCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   @@index([hiveId])
   @@index([inspectionId])
@@ -695,9 +702,11 @@ model QuickCheck {
   date      DateTime         @default(now())
   note      String?          @db.Text
   tags      String[]         // reuses additionalObservation + reminderObservation values
-  photos    QuickCheckPhoto[]
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  photos          QuickCheckPhoto[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  createdByUserId String?
+  createdByUser   User?            @relation("QuickCheckCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   @@index([hiveId])
   @@index([apiaryId])

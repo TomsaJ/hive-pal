@@ -3,7 +3,12 @@ import { Prisma } from '@/prisma/client';
 import { CustomLoggerService } from '../logger/logger.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FileUploadService } from '../storage/file-upload.service';
-import { ApiaryResponse, ApiaryListResponse, CreateApiary, UpdateApiary } from 'shared-schemas';
+import {
+  ApiaryResponse,
+  ApiaryListResponse,
+  CreateApiary,
+  UpdateApiary,
+} from 'shared-schemas';
 
 @Injectable()
 export class ApiariesService {
@@ -77,10 +82,7 @@ export class ApiariesService {
     const [apiaries, pendingMemberships] = await Promise.all([
       this.prisma.apiary.findMany({
         where: {
-          OR: [
-            { userId },
-            { members: { some: { userId, status: 'ACTIVE' } } },
-          ],
+          OR: [{ userId }, { members: { some: { userId, status: 'ACTIVE' } } }],
         },
         include: {
           featurePhoto: { select: { id: true, storageKey: true } },
