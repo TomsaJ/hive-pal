@@ -26,7 +26,7 @@ type InspectionWithIncludes = Prisma.InspectionGetPayload<{
         frameAction: true;
         harvestAction: true;
         boxConfigurationAction: true;
-        createdByUser: { select: { name: true } };
+        createdByUser: { select: { name: true, email: true } };
       };
     };
     hive: {
@@ -37,6 +37,7 @@ type InspectionWithIncludes = Prisma.InspectionGetPayload<{
     createdByUser: {
       select: {
         name: true;
+        email: true;
       };
     };
   };
@@ -166,7 +167,12 @@ export class InspectionsService {
 
         // Add actions using ActionsService
         if (actions && actions.length > 0) {
-          await this.actionsService.createActions(inspection.id, actions, tx, filter.userId);
+          await this.actionsService.createActions(
+            inspection.id,
+            actions,
+            tx,
+            filter.userId,
+          );
         }
 
         // Emit event for new inspection
@@ -234,10 +240,10 @@ export class InspectionsService {
             frameAction: true,
             harvestAction: true,
             boxConfigurationAction: true,
-            createdByUser: { select: { name: true } },
+            createdByUser: { select: { name: true, email: true } },
           },
         },
-        createdByUser: { select: { name: true } },
+        createdByUser: { select: { name: true, email: true } },
       },
     });
 
@@ -261,7 +267,7 @@ export class InspectionsService {
         status: inspection.status as InspectionStatus,
         score,
         actions,
-        createdByUserName: inspection.createdByUser?.name,
+        createdByUserName: inspection.createdByUser?.name || inspection.createdByUser?.email,
       };
     });
   }
@@ -289,10 +295,10 @@ export class InspectionsService {
             frameAction: true,
             harvestAction: true,
             boxConfigurationAction: true,
-            createdByUser: { select: { name: true } },
+            createdByUser: { select: { name: true, email: true } },
           },
         },
-        createdByUser: { select: { name: true } },
+        createdByUser: { select: { name: true, email: true } },
       },
     });
     if (!inspection) {
@@ -318,7 +324,7 @@ export class InspectionsService {
       status: inspection.status as InspectionStatus,
       score,
       actions,
-      createdByUserName: inspection.createdByUser?.name,
+      createdByUserName: inspection.createdByUser?.name || inspection.createdByUser?.email,
     };
   }
 
@@ -381,7 +387,12 @@ export class InspectionsService {
 
         // Handle actions update if provided - use ActionsService
         if (actions !== undefined) {
-          await this.actionsService.updateActions(id, actions, tx, filter.userId);
+          await this.actionsService.updateActions(
+            id,
+            actions,
+            tx,
+            filter.userId,
+          );
         }
 
         // Determine status based on explicit input or date-based default
@@ -534,7 +545,7 @@ export class InspectionsService {
             frameAction: true,
             harvestAction: true,
             boxConfigurationAction: true,
-            createdByUser: { select: { name: true } },
+            createdByUser: { select: { name: true, email: true } },
           },
         },
         hive: {
@@ -542,7 +553,7 @@ export class InspectionsService {
             name: true,
           },
         },
-        createdByUser: { select: { name: true } },
+        createdByUser: { select: { name: true, email: true } },
       },
     });
 
@@ -592,7 +603,7 @@ export class InspectionsService {
             frameAction: true,
             harvestAction: true,
             boxConfigurationAction: true,
-            createdByUser: { select: { name: true } },
+            createdByUser: { select: { name: true, email: true } },
           },
         },
         hive: {
@@ -600,7 +611,7 @@ export class InspectionsService {
             name: true,
           },
         },
-        createdByUser: { select: { name: true } },
+        createdByUser: { select: { name: true, email: true } },
       },
     });
 
@@ -630,7 +641,7 @@ export class InspectionsService {
         status: inspection.status as InspectionStatus,
         score,
         actions,
-        createdByUserName: inspection.createdByUser?.name,
+        createdByUserName: inspection.createdByUser?.name || inspection.createdByUser?.email,
       };
     });
   }

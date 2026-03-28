@@ -38,7 +38,7 @@ export class QuickChecksService {
     private prisma: PrismaService,
     private storageService: StorageService,
     private logger: CustomLoggerService,
-  ) {}
+  ) { }
 
   async create(
     dto: CreateQuickCheck,
@@ -75,7 +75,7 @@ export class QuickChecksService {
         tags: dto.tags ?? [],
         createdByUserId: filter.userId,
       },
-      include: { photos: true, createdByUser: { select: { name: true } } },
+      include: { photos: true, createdByUser: { select: { name: true, email: true } } },
     });
 
     this.logger.log({
@@ -83,6 +83,7 @@ export class QuickChecksService {
       quickCheckId: quickCheck.id,
       apiaryId: dto.apiaryId,
       hiveId: dto.hiveId,
+      userName: filter.userId,
     });
 
     return this.mapToResponse(quickCheck);
@@ -119,7 +120,7 @@ export class QuickChecksService {
 
     const quickChecks = await this.prisma.quickCheck.findMany({
       where,
-      include: { photos: true, createdByUser: { select: { name: true } } },
+      include: { photos: true, createdByUser: { select: { name: true, email: true } } },
       orderBy: { date: 'desc' },
     });
 
@@ -135,7 +136,7 @@ export class QuickChecksService {
         id,
         apiary: { id: filter.apiaryId },
       },
-      include: { photos: true, createdByUser: { select: { name: true } } },
+      include: { photos: true, createdByUser: { select: { name: true, email: true } } },
     });
 
     if (!quickCheck) {
@@ -349,7 +350,7 @@ export class QuickChecksService {
     tags: string[];
     createdAt: Date;
     updatedAt: Date;
-    createdByUser?: { name: string | null } | null;
+    createdByUser?: { name: string | null; email: string } | null;
     photos: Array<{
       id: string;
       quickCheckId: string;
@@ -370,7 +371,7 @@ export class QuickChecksService {
       photos: quickCheck.photos.map((p) => this.mapPhotoToResponse(p)),
       createdAt: quickCheck.createdAt.toISOString(),
       updatedAt: quickCheck.updatedAt.toISOString(),
-      createdByUserName: quickCheck.createdByUser?.name,
+      createdByUserName: quickCheck.createdByUser?.name || quickCheck.createdByUser?.email,
     };
   }
 
