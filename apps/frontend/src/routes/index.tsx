@@ -18,7 +18,7 @@ import {
   InspectionListPage,
   ScheduleInspectionPage,
 } from '@/pages/inspection';
-import { CreateQueenPage, EditQueenPage } from '@/pages/queen';
+import { CreateQueenPage, EditQueenPage, QueenDetailPage, QueenListPage } from '@/pages/queen';
 import { ChangePasswordPage } from '@/pages/account';
 import GenericErrorPage from '@/pages/error-page.tsx';
 import {
@@ -266,6 +266,14 @@ const router = createBrowserRouter([
       {
         path: '/queens/:queenId/edit',
         element: <EditQueenPage />,
+      },
+      {
+        path: '/queens',
+        element: <QueenListPage />,
+      },
+      {
+        path: '/queens/:queenId',
+        element: <QueenDetailPage />,
       },
       {
         path: '/harvests',

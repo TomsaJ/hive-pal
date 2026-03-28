@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { HiveStatus } from '@/pages/hive/components';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatisticCards } from './statistic-cards';
 import { BoxConfigurator } from './box-configurator';
@@ -12,6 +11,8 @@ import { HiveSettings } from './hive-settings';
 import { HiveCharts } from './charts';
 import { useHive } from '@/api/hooks';
 import { useBreadcrumbStore } from '@/stores/breadcrumb-store';
+import { QueenHistoryTab } from './queen-history-tab';
+import { HiveStatusButton } from './hive-status-button';
 import { buildBoxGradient } from '@/utils/box-gradient';
 import { useImageDisplayStore } from '@/stores/image-display-store';
 
@@ -73,9 +74,9 @@ export const HiveDetailPage = () => {
               <h1 className="text-xl sm:text-2xl font-semibold">
                 {hive?.name}
               </h1>
-              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                <HiveStatus status={hive?.status} />
-              </span>
+              {hiveId && (
+                <HiveStatusButton hiveId={hiveId} status={hive?.status} />
+              )}
             </div>
             {hive?.installationDate && (
               <p className="text-sm text-gray-500">
@@ -118,6 +119,9 @@ export const HiveDetailPage = () => {
               <TabsTrigger value="settings" className="text-xs sm:text-sm">
                 Settings
               </TabsTrigger>
+              <TabsTrigger value="queens" className="text-xs sm:text-sm">
+                Queen History
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
@@ -134,6 +138,10 @@ export const HiveDetailPage = () => {
 
             <TabsContent value="settings">
               <HiveSettings hive={hive} onHiveUpdated={refetch} />
+            </TabsContent>
+
+            <TabsContent value="queens">
+              {hive && <QueenHistoryTab hiveId={hive.id} activeQueen={hive.activeQueen} />}
             </TabsContent>
           </Tabs>
         </div>
