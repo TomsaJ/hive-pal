@@ -13,11 +13,14 @@ import { HiveCharts } from './charts';
 import { useHive } from '@/api/hooks';
 import { useBreadcrumbStore } from '@/stores/breadcrumb-store';
 import { buildBoxGradient } from '@/utils/box-gradient';
+import { useImageDisplayStore } from '@/stores/image-display-store';
 
 export const HiveDetailPage = () => {
   const { id: hiveId } = useParams<{ id: string }>();
   const { data: hive, error, refetch } = useHive(hiveId as string);
   const { setHiveContext, clearContext } = useBreadcrumbStore();
+  const { mode: imageMode } = useImageDisplayStore();
+  const isSide = imageMode === 'side';
 
   // Set breadcrumb context when hive data is loaded
   useEffect(() => {
@@ -46,20 +49,26 @@ export const HiveDetailPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         <div className="lg:col-span-8 xl:col-span-9">
           {/* Hive header card */}
-          <div className="rounded-lg overflow-hidden mb-4">
-            {hive?.featurePhotoUrl ? (
-              <img
-                src={hive.featurePhotoUrl}
-                alt={`${hive.name} feature photo`}
-                className="w-full h-40 object-cover"
-              />
-            ) : (
-              <div
-                className="w-full h-32 opacity-60"
-                style={{ background: buildBoxGradient(hive?.boxes) }}
-              />
+          <div className={`rounded-lg overflow-hidden mb-4 ${isSide ? 'flex flex-col sm:flex-row' : ''}`}>
+            {imageMode !== 'hidden' && (
+              hive?.featurePhotoUrl ? (
+                <img
+                  src={hive.featurePhotoUrl}
+                  alt={`${hive.name} feature photo`}
+                  className={isSide
+                    ? 'w-full sm:w-[150px] h-40 sm:h-auto min-h-[140px] object-cover flex-shrink-0'
+                    : 'w-full h-40 object-cover'}
+                />
+              ) : (
+                <div
+                  className={isSide
+                    ? 'w-full sm:w-[150px] h-32 sm:h-auto min-h-[140px] opacity-60 flex-shrink-0'
+                    : 'w-full h-32 opacity-60'}
+                  style={{ background: buildBoxGradient(hive?.boxes) }}
+                />
+              )
             )}
-            <div className="pt-3">
+            <div className="pt-3 flex-1 min-w-0">
             <div className="flex justify-between items-center mb-2">
               <h1 className="text-xl sm:text-2xl font-semibold">
                 {hive?.name}
