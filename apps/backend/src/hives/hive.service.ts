@@ -192,6 +192,18 @@ export class HiveService {
       where: {
         apiary: {
           id: filter.apiaryId,
+          ...(filter.apiaryId
+            ? {}
+            : {
+                OR: [
+                  { userId: filter.userId },
+                  {
+                    members: {
+                      some: { userId: filter.userId, status: 'ACTIVE' },
+                    },
+                  },
+                ],
+              }),
         },
         status: this.resolveStatusFilter(filter),
       },
