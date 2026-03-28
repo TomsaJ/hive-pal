@@ -26,8 +26,7 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { useHives } from '@/api/hooks';
-import { useRecordQueenTransfer } from '@/api/hooks';
+import { useRecordQueenTransfer, useHives } from '@/api/hooks';
 import { QueenResponse } from 'shared-schemas';
 
 interface QueenTransferDialogProps {
@@ -81,7 +80,7 @@ export const QueenTransferDialog: React.FC<QueenTransferDialogProps> = ({
             <Label htmlFor="toHive">Move to Hive</Label>
             <Select
               value={toHiveId ?? 'none'}
-              onValueChange={(val) => setToHiveId(val === 'none' ? null : val)}
+              onValueChange={val => setToHiveId(val === 'none' ? null : val)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select destination hive" />
@@ -89,8 +88,8 @@ export const QueenTransferDialog: React.FC<QueenTransferDialogProps> = ({
               <SelectContent>
                 <SelectItem value="none">Remove from hive</SelectItem>
                 {hives
-                  ?.filter((h) => h.id !== queen.hiveId)
-                  .map((hive) => (
+                  ?.filter(h => h.id !== queen.hiveId)
+                  .map(hive => (
                     <SelectItem key={hive.id} value={hive.id}>
                       {hive.name}
                     </SelectItem>
@@ -118,7 +117,7 @@ export const QueenTransferDialog: React.FC<QueenTransferDialogProps> = ({
                 <Calendar
                   mode="single"
                   selected={movedAt}
-                  onSelect={(date) => date && setMovedAt(date)}
+                  onSelect={date => date && setMovedAt(date)}
                   initialFocus
                 />
               </PopoverContent>
@@ -130,7 +129,7 @@ export const QueenTransferDialog: React.FC<QueenTransferDialogProps> = ({
             <Input
               id="reason"
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              onChange={e => setReason(e.target.value)}
               placeholder="e.g., Hive split, requeen..."
             />
           </div>
@@ -140,13 +139,17 @@ export const QueenTransferDialog: React.FC<QueenTransferDialogProps> = ({
             <Input
               id="notes"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={e => setNotes(e.target.value)}
               placeholder="Additional notes..."
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isPending}
+          >
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isPending || isNoOp}>
