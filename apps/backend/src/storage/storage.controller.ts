@@ -20,7 +20,7 @@ export class StorageController {
   constructor(
     @Inject(StorageService)
     private readonly storageService: StorageService,
-  ) { }
+  ) {}
 
   @Get('files/*key')
   async serveFile(

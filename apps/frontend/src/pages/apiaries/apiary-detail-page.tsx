@@ -5,6 +5,7 @@ import { Section } from '@/components/common/section';
 import { ApiaryActionSidebar, HivesLayout } from './components';
 import { CalendarSubscriptionCard } from './components/calendar-subscription-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ImagePlus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   MainContent,
@@ -83,7 +84,18 @@ export const ApiaryDetailPage = () => {
 
           <TabsContent value="overview">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <Card>
+              <Card className="overflow-hidden">
+                {apiary.featurePhotoUrl ? (
+                  <img
+                    src={apiary.featurePhotoUrl}
+                    alt={`${apiary.name} feature photo`}
+                    className="w-full h-40 object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-24 bg-muted/50 flex items-center justify-center">
+                    <ImagePlus className="h-8 w-8 text-muted-foreground/30" />
+                  </div>
+                )}
                 <CardHeader>
                   <CardTitle>{t('apiary:detail.apiaryInformation')}</CardTitle>
                 </CardHeader>

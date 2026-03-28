@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,12 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useCreateApiary } from '@/api/hooks';
+import { useCreateApiary, useUpdateApiary } from '@/api/hooks';
+import { useCreatePhoto } from '@/api/hooks';
+import {
+  FeaturePhotoPicker,
+  FeaturePhotoPickerRef,
+} from '@/components/feature-photo-picker';
 
 // Lazy load the map component (heavy ~200KB)
 const MapPicker = lazy(() => import('@/components/common/map-picker.tsx'));
@@ -40,8 +45,11 @@ export const ApiaryForm: React.FC<ApiaryFormProps> = ({
 }) => {
   const { t } = useTranslation(['apiary', 'common']);
   const navigate = useNavigate();
+  const featurePhotoRef = useRef<FeaturePhotoPickerRef>(null);
 
   const { mutateAsync } = useCreateApiary();
+  const { mutateAsync: updateApiary } = useUpdateApiary();
+  const createPhoto = useCreatePhoto();
 
   const form = useForm<ApiaryFormData>({
     resolver: zodResolver(apiariesSchema),
@@ -57,12 +65,29 @@ export const ApiaryForm: React.FC<ApiaryFormProps> = ({
       return;
     }
     try {
-      await mutateAsync({
+      const apiary = await mutateAsync({
         name: data.name,
         location: data.location,
         latitude: data.latitude,
         longitude: data.longitude,
       });
+
+      // If there's a pending file, upload it and link as feature photo
+      const pendingFile = featurePhotoRef.current?.getPendingFile();
+      if (pendingFile) {
+        const formData = new FormData();
+        formData.append('file', pendingFile);
+        formData.append('apiaryId', apiary.id);
+        formData.append('caption', 'Feature photo');
+        formData.append('date', new Date().toISOString());
+
+        const photo = await createPhoto.mutateAsync(formData);
+        await updateApiary({
+          id: apiary.id,
+          data: { featurePhotoId: photo.id },
+        });
+        featurePhotoRef.current?.clearPendingFile();
+      }
 
       navigate('/'); // Navigate to home page or apiary list
     } catch (error) {
@@ -105,6 +130,12 @@ export const ApiaryForm: React.FC<ApiaryFormProps> = ({
               <FormMessage />
             </FormItem>
           )}
+        />
+
+        <FeaturePhotoPicker
+          ref={featurePhotoRef}
+          onPhotoUploaded={() => {}}
+          onPhotoRemoved={() => {}}
         />
 
         <Suspense fallback={<MapLoader />}>

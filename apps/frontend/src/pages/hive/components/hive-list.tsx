@@ -12,6 +12,7 @@ import {
 } from '@/utils/feeding-calculations';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { buildBoxGradient } from '@/utils/box-gradient';
 
 type HiveListProps = {
   hives: HiveResponse[];
@@ -49,8 +50,24 @@ const HiveCard: React.FC<{ hive: HiveResponse }> = ({ hive }) => {
     return t('hive:card.lastInspected', { date: date.toLocaleDateString() });
   };
 
+  const featurePhotoUrl = hive.featurePhotoUrl || hiveDetails?.featurePhotoUrl;
+
   return (
-    <Card>
+    <Card className="overflow-hidden">
+      {/* Feature photo banner or gradient fallback */}
+      {featurePhotoUrl ? (
+        <img
+          src={featurePhotoUrl}
+          alt={`${hive.name} feature photo`}
+          className="w-full h-32 object-cover"
+        />
+      ) : (
+        <div
+          className="w-full h-32 opacity-60"
+          style={{ background: buildBoxGradient(hiveDetails?.boxes) }}
+        />
+      )}
+
       <CardHeader className={'flex justify-between items-start flex-row'}>
         <div className="flex flex-col">
           <CardTitle>{hive.name}</CardTitle>

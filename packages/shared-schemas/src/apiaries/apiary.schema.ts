@@ -6,6 +6,7 @@ export const createApiarySchema = z.object({
   location: z.string().nullish(),
   latitude: z.number().nullish(),
   longitude: z.number().nullish(),
+  featurePhotoId: z.string().uuid().nullish(),
 });
 
 // Schema for updating apiaries
@@ -14,6 +15,7 @@ export const updateApiarySchema = createApiarySchema.partial();
 // Schema for apiary response
 export const apiaryResponseSchema = createApiarySchema.extend({
   id: z.string().uuid(),
+  featurePhotoUrl: z.string().nullish(),
 });
 
 // Schema for apiary map point (admin view)
