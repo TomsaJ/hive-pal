@@ -40,7 +40,33 @@
     },
     "form": {
         "selectHive": "Изабери кошницу",
-        "pickDate": "Изабери датум"
+        "pickDate": "Изабери датум",
+        "newInspection": "Нови преглед",
+        "editInspection": "Измени преглед",
+        "hive": "Кошница",
+        "inspectionDate": "Датум прегледа",
+        "futureScheduled": "Овај преглед је заказан за будућност",
+        "futureScheduledDescription": "Заказујете преглед за неки будући датум.",
+        "cancel": "Откажи",
+        "saveAndNext": "Сачувај и следеће",
+        "saving": "Чување...",
+        "save": "Сачувај",
+        "completeInspection": "Заврши преглед",
+        "saveAndComplete": "Сачувај и заврши",
+        "weather": {
+            "title": "Временске информације",
+            "description": "Додајте временске услове",
+            "temperature": "Температура",
+            "condition": "Услови",
+            "sunny": "Сунчано",
+            "partlyCloudy": "Умерено облачно",
+            "cloudy": "Облачно",
+            "rainy": "Кишовито"
+        },
+        "notes": {
+            "title": "Белешке",
+            "label": "Белешке"
+        }
     },
     "status": {
         "completed": "Завршено",
@@ -176,6 +202,38 @@
         "loading": "Учитавање прегледа...",
         "error": "Грешка",
         "errorDescription": "Учитавање детаља прегледа није успело.",
-        "goBack": "Иди назад"
+        "goBack": "Иди назад",
+        "notFound": "Преглед није пронађен",
+        "back": "Назад",
+        "share": "Подели",
+        "shareFailed": "Креирање линка за дељење није успело",
+        "viewHive": "Прикажи кошницу"
+    },
+    "statusCard": {
+        "title": "Статус",
+        "currentStatus": "Тренутни статус",
+        "actions": "Акције",
+        "markCompleted": "Означи као завршено",
+        "cancelInspection": "Откажи преглед"
+    },
+    "weatherCard": {
+        "title": "Време",
+        "temperature": "Температура",
+        "conditions": "Услови"
+    },
+    "notesCard": {
+        "title": "Белешке"
+    },
+    "observationsCard": {
+        "title": "Опажања",
+        "strength": "Јачина",
+        "uncappedBrood": "Незатворено легло",
+        "cappedBrood": "Затворено легло",
+        "honeyStores": "Залихе меда",
+        "pollenStores": "Залихе полена",
+        "queenCells": "Матичњаци",
+        "broodPattern": "Распоред легла",
+        "additionalObservations": "Додатна запажања",
+        "reminders": "Подсетници"
     }
 }

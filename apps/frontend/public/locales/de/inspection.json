@@ -119,8 +119,8 @@
     "shareInspectionList": "Inspektionsliste teilen"
   },
   "messages": {
-    "exportComingSoon": "Exportfunktion kommt bald",
-    "shareComingSoon": "Teilen-Funktion kommt bald"
+    "exportComingSoon": "Exportfunktion bald verfügbar",
+    "shareComingSoon": "Freigabefunktion bald verfügbar"
   },
   "scheduled": {
     "title": "Geplante Inspektionen",

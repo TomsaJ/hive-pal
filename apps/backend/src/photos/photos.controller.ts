@@ -100,10 +100,7 @@ export class PhotosController {
   }
 
   @Get(':id/download-url')
-  async getDownloadUrl(
-    @Param('id') id: string,
-    @Req() req: RequestWithApiary,
-  ) {
+  async getDownloadUrl(@Param('id') id: string, @Req() req: RequestWithApiary) {
     return this.photosService.getDownloadUrl(id, {
       apiaryId: req.apiaryId,
       userId: req.user.id,

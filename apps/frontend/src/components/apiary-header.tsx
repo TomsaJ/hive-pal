@@ -1,32 +1,75 @@
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  AlertTriangle,
   BarChart,
+  CalendarDays,
+  Clock,
   Droplet,
-  TrendingUp,
-  PieChart,
-  MapPin,
   FileBarChart,
+  MapPin,
+  PieChart,
+  TrendingUp,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useApiaryStore } from '@/hooks/use-apiary';
 import { useApiaryStatistics } from '@/api/hooks/useReports';
-import { useApiary } from '@/api/hooks';
+import { useApiary, useHives } from '@/api/hooks';
+import {
+  useOverdueInspections,
+  useDueTodayInspections,
+  useUpcomingInspections,
+} from '@/api/hooks/useInspections';
+import { format } from 'date-fns';
 
-export const ReportsSummaryWidget = () => {
-  const { t } = useTranslation(['common']);
+export const ApiaryHeader: React.FC = () => {
+  const { t } = useTranslation(['common', 'inspection']);
+  const navigate = useNavigate();
   const { activeApiaryId } = useApiaryStore();
-  const { data: statistics, isLoading } = useApiaryStatistics(
+  const { data: statistics, isLoading: statsLoading } = useApiaryStatistics(
     activeApiaryId ?? undefined,
     'ytd',
   );
   const { data: apiary } = useApiary(activeApiaryId ?? '', {
     enabled: !!activeApiaryId,
   });
+  const { data: hives } = useHives();
 
-  if (isLoading) {
+  const { data: overdueInspections, isLoading: overdueLoading } =
+    useOverdueInspections();
+  const { data: dueTodayInspections, isLoading: dueTodayLoading } =
+    useDueTodayInspections();
+  const { data: upcomingInspections, isLoading: upcomingLoading } =
+    useUpcomingInspections(5);
+
+  const hiveNameMap = useMemo(() => {
+    if (!hives) return new Map<string, string>();
+    return new Map(hives.map(hive => [hive.id, hive.name]));
+  }, [hives]);
+
+  const getHiveName = (hiveId: string) => hiveNameMap.get(hiveId) || hiveId;
+
+  const overdueCount = overdueInspections?.length ?? 0;
+  const dueTodayCount = dueTodayInspections?.length ?? 0;
+  const upcomingCount = upcomingInspections?.length ?? 0;
+  const inspectionsLoading = overdueLoading || dueTodayLoading || upcomingLoading;
+  const hasInspections = overdueCount > 0 || dueTodayCount > 0 || upcomingCount > 0;
+
+  const handleViewOverdue = () => {
+    navigate('/inspections?status=OVERDUE');
+  };
+
+  const handleViewDueToday = () => {
+    navigate(
+      '/inspections?status=SCHEDULED&date=' +
+        new Date().toISOString().split('T')[0],
+    );
+  };
+
+  if (statsLoading) {
     return (
       <Card className="h-full gap-0 py-0">
         <div className="px-4 pt-3 pb-1">
@@ -102,6 +145,12 @@ export const ReportsSummaryWidget = () => {
               {t('reports.widget.viewReports')}
             </Link>
           </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/calendar">
+              <CalendarDays className="h-4 w-4" />
+              {t('inspection:dashboard.viewCalendar', 'Calendar')}
+            </Link>
+          </Button>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2 px-4 pb-3">
@@ -152,6 +201,69 @@ export const ReportsSummaryWidget = () => {
           </div>
         </div>
       </div>
+
+      {/* Inspection Status */}
+      {!inspectionsLoading && hasInspections && (
+        <div className="px-4 pb-3 space-y-2">
+          {(overdueCount > 0 || dueTodayCount > 0) && (
+            <div className="flex items-center gap-4">
+              {overdueCount > 0 && (
+                <div
+                  className="flex items-center gap-2 text-sm text-red-600 hover:text-red-700 cursor-pointer"
+                  onClick={handleViewOverdue}
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>
+                    {overdueCount} {t('inspection:dashboard.overdue', 'overdue')}
+                  </span>
+                </div>
+              )}
+              {dueTodayCount > 0 && (
+                <div
+                  className="flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700 cursor-pointer"
+                  onClick={handleViewDueToday}
+                >
+                  <Clock className="h-4 w-4" />
+                  <span>
+                    {dueTodayCount}{' '}
+                    {t('inspection:dashboard.dueToday', 'due today')}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {upcomingCount > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground">
+                {t('inspection:dashboard.upcoming', 'Upcoming')}
+              </h4>
+              <div className="space-y-2">
+                {upcomingInspections?.map(inspection => (
+                  <div
+                    key={inspection.id}
+                    className="flex flex-col gap-1 text-sm p-2 rounded-md bg-blue-50 border border-blue-100"
+                  >
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span>{format(new Date(inspection.date), 'MMM d')}</span>
+                      <span>{format(new Date(inspection.date), 'HH:mm')}</span>
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                        {t('inspection:status.pending', 'Scheduled')}
+                      </span>
+                    </div>
+                    <Link
+                      to={`/hives/${inspection.hiveId}`}
+                      className="font-medium text-blue-700 hover:underline"
+                    >
+                      {getHiveName(inspection.hiveId)}
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   );
 };

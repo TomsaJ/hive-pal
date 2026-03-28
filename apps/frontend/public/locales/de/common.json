@@ -4,7 +4,7 @@
     "dashboard": "Dashboard",
     "apiaries": "Bienenstände",
     "hives": "Bienenstöcke",
-    "inspections": "Inspektionen",
+    "inspections": "Durchsichten",
     "queens": "Königinnen",
     "settings": "Einstellungen",
     "admin": "Admin",
@@ -14,7 +14,7 @@
     "allApiaries": "Alle Bienenstände",
     "createApiary": "Bienenstand erstellen",
     "allHives": "Alle Bienenstöcke",
-    "allInspections": "Alle Inspektionen",
+    "allInspections": "Alle Durchsichten",
     "schedule": "Zeitplan",
     "recent": "Aktuell",
     "upcoming": "Bevorstehend",
@@ -271,7 +271,7 @@
     "noActivityApiary": "Noch keine Aktivitäten in diesem Bienenstand vorhanden",
     "noMatchingFilters": "Keine Ereignisse entsprechen den gewählten Filtern",
     "allEvents": "Alle Ereignisse",
-    "inspections": "Inspektionen",
+    "inspections": "Durchsicht",
     "feeding": "Fütterung",
     "treatments": "Behandlungen",
     "harvests": "Ernten",
@@ -320,7 +320,7 @@
       "population": "Volksstärke",
       "stores": "Vorräte",
       "queen": "Königin",
-      "lastInspection": "Letzte Inspektion"
+      "lastInspection": "Letzte Durchsicht"
     },
     "charts": {
       "hiveScoreTrends": "Trend der Bienenstock-Bewertung"
@@ -348,5 +348,62 @@
       "viewReports": "Berichte anzeigen",
       "noApiary": "Wählen Sie einen Bienenstand aus, um Statistiken anzuzeigen"
     }
+  },
+  "photo": {
+    "captionPlaceholder": "Beschreibe das Foto...",
+    "caption": "Bildunterschrift",
+    "deleteFailed": "Das Löschen des Fotos ist fehlgeschlagen",
+    "title": "Foto hinzufügen",
+    "description": "Lade ein Foto hoch, optional mit einer Bildunterschrift.",
+    "optional": "optional",
+    "selectPhoto": "Wähle ein Foto",
+    "upload": "Foto hochladen",
+    "uploading": "Hochlanden...",
+    "uploadSuccess": "Foto hochgeladen",
+    "uploadFailed": "Foto hochladen fehlgeschlagen",
+    "deleteTitle": "Foto löschen?",
+    "deleteDescription": "Dieser Vorgang kann nicht rückgängig gemacht werden. Das Foto wird dadurch endgültig gelöscht.",
+    "deleted": "Foto gelöscht"
+  },
+  "document": {
+    "uploading": "Hochladen...",
+    "uploadSuccess": "Dokument hochgeladen",
+    "uploadFailed": "Das Hochladen des Dokuments ist fehlgeschlagen",
+    "deleteDescription": "Dieser Vorgang kann nicht rückgängig gemacht werden. Das Dokument wird dadurch endgültig gelöscht.",
+    "deleteFailed": "Das Löschen des Dokuments ist fehlgeschlagen",
+    "title": "Dokument hinzufügen",
+    "description": "Laden Sie ein PDF-Dokument oder ein gescanntes Dokument hoch.",
+    "titleField": "Titel",
+    "titlePlaceholder": "Titel des Dokuments",
+    "notes": "Notizen",
+    "optional": "optional",
+    "notesPlaceholder": "Notizen zu diesem Dokument hinzufügen...",
+    "selectFile": "Wähle eine Datei (PDF, JPEG, PNG)",
+    "upload": "Dokument hochladen",
+    "deleteTitle": "Dokument löschen?",
+    "deleted": "Dokument gelöscht"
+  },
+  "files": {
+    "allFiles": "Alle Dateien",
+    "photos": "Fotos",
+    "documents": "Dokumente",
+    "search": "Dateien suchen...",
+    "filterByHive": "Filtern nach Bienenstöcken",
+    "filterByType": "Filtern nach Typ",
+    "noFiles": "Es wurden noch keine Dateien hochgeladen",
+    "name": "Name",
+    "type": "Typ",
+    "hive": "Bienenstock",
+    "size": "Größe",
+    "download": "Download",
+    "delete": "Löschen",
+    "title": "Dateien"
+  },
+  "quickAdd": {
+    "title": "Eintrag hinzufügen",
+    "quickCheck": "Schnellprüfung",
+    "action": "Aktion",
+    "photo": "Foto",
+    "document": "Dokument"
   }
 }

@@ -30,7 +30,11 @@ export class DocumentsService {
     filter: ApiaryUserFilter,
   ): Promise<DocumentResponse> {
     this.fileUpload.validateFile(file, CONFIG);
-    await this.fileUpload.validateOwnership(dto.apiaryId, filter.userId, dto.hiveId);
+    await this.fileUpload.validateOwnership(
+      dto.apiaryId,
+      filter.userId,
+      dto.hiveId,
+    );
 
     const { id, storageKey } = await this.fileUpload.uploadFile(
       file,
@@ -52,7 +56,11 @@ export class DocumentsService {
       },
     });
 
-    this.logger.log({ message: 'Document created', documentId: id, apiaryId: dto.apiaryId });
+    this.logger.log({
+      message: 'Document created',
+      documentId: id,
+      apiaryId: dto.apiaryId,
+    });
     return this.mapToResponse(document);
   }
 
@@ -68,7 +76,10 @@ export class DocumentsService {
     return documents.map((d) => this.mapToResponse(d));
   }
 
-  async findOne(id: string, filter: ApiaryUserFilter): Promise<DocumentResponse> {
+  async findOne(
+    id: string,
+    filter: ApiaryUserFilter,
+  ): Promise<DocumentResponse> {
     const document = await this.prisma.document.findFirst({
       where: this.fileUpload.ownershipWhere(id, filter),
     });

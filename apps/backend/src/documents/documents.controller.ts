@@ -101,10 +101,7 @@ export class DocumentsController {
   }
 
   @Get(':id/download-url')
-  async getDownloadUrl(
-    @Param('id') id: string,
-    @Req() req: RequestWithApiary,
-  ) {
+  async getDownloadUrl(@Param('id') id: string, @Req() req: RequestWithApiary) {
     return this.documentsService.getDownloadUrl(id, {
       apiaryId: req.apiaryId,
       userId: req.user.id,

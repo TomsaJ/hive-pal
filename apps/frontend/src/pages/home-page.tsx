@@ -6,8 +6,7 @@ import {
 } from '@/components/layout/page-grid-layout';
 import { HomeActionSidebar } from '@/components/home-action-sidebar';
 import { HiveMinimap } from '@/components/hive-minimap';
-import { InspectionStatusSummary } from '@/components/inspection-status-summary';
-import { ReportsSummaryWidget } from '@/components/reports-summary-widget';
+import { ApiaryHeader } from '@/components/apiary-header';
 import { ApiaryTimeline } from '@/components/apiary-timeline';
 import { useHives } from '@/api/hooks';
 import { useApiary } from '@/hooks/use-apiary';
@@ -24,11 +23,7 @@ export const HomePage = () => {
     <PageGrid>
       <MainContent>
         <div className="space-y-6">
-          {/* Side by side on lg+ screens, stacked below */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <InspectionStatusSummary />
-            <ReportsSummaryWidget />
-          </div>
+          <ApiaryHeader />
           {activeApiaryId && (
             <HiveMinimap apiaryId={activeApiaryId} className="mb-6" />
           )}

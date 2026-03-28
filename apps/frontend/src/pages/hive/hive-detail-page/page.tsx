@@ -12,6 +12,7 @@ import { HiveSettings } from './hive-settings';
 import { HiveCharts } from './charts';
 import { useHive } from '@/api/hooks';
 import { useBreadcrumbStore } from '@/stores/breadcrumb-store';
+import { buildBoxGradient } from '@/utils/box-gradient';
 
 export const HiveDetailPage = () => {
   const { id: hiveId } = useParams<{ id: string }>();
@@ -45,7 +46,20 @@ export const HiveDetailPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         <div className="lg:col-span-8 xl:col-span-9">
           {/* Hive header card */}
-          <div className="rounded-lg shadow p-3 sm:p-4 mb-4">
+          <div className="rounded-lg overflow-hidden mb-4">
+            {hive?.featurePhotoUrl ? (
+              <img
+                src={hive.featurePhotoUrl}
+                alt={`${hive.name} feature photo`}
+                className="w-full h-40 object-cover"
+              />
+            ) : (
+              <div
+                className="w-full h-32 opacity-60"
+                style={{ background: buildBoxGradient(hive?.boxes) }}
+              />
+            )}
+            <div className="pt-3">
             <div className="flex justify-between items-center mb-2">
               <h1 className="text-xl sm:text-2xl font-semibold">
                 {hive?.name}
@@ -61,6 +75,23 @@ export const HiveDetailPage = () => {
               </p>
             )}
             {hive?.notes && <p className="mt-2 text-gray-700">{hive.notes}</p>}
+
+            {/* Compact stats section */}
+            <div className="border-t mt-3 pt-3">
+              {hive?.hiveScore && (
+                <StatisticCards score={hive.hiveScore} variant="inline" />
+              )}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-3">
+                <QueenInformation
+                  hiveId={hive?.id}
+                  activeQueen={hive?.activeQueen}
+                  onQueenUpdated={() => refetch()}
+                  variant="inline"
+                />
+                {hive && <FeedingSection hiveId={hive.id} variant="inline" />}
+              </div>
+            </div>
+            </div>
           </div>
 
           {/* Tabs for different sections */}
@@ -81,28 +112,7 @@ export const HiveDetailPage = () => {
             </TabsList>
 
             <TabsContent value="overview">
-              <div className="space-y-3 sm:space-y-4">
-                {/* Three main cards in responsive grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-                  {/* Scores Card */}
-                  {hive && hive.hiveScore && (
-                    <StatisticCards score={hive.hiveScore} />
-                  )}
-
-                  {/* Queen Information Card */}
-                  <QueenInformation
-                    hiveId={hive?.id}
-                    activeQueen={hive?.activeQueen}
-                    onQueenUpdated={() => refetch()}
-                  />
-
-                  {/* Feeding Card */}
-                  {hive && <FeedingSection hiveId={hive.id} />}
-                </div>
-
-                {/* Hive timeline */}
-                <HiveTimeline hiveId={hiveId} apiaryId={hive?.apiaryId} />
-              </div>
+              <HiveTimeline hiveId={hiveId} apiaryId={hive?.apiaryId} />
             </TabsContent>
 
             <TabsContent value="analytics">
