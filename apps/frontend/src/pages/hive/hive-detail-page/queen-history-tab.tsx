@@ -1,21 +1,10 @@
 import { Link } from 'react-router-dom';
-import { format, parseISO } from 'date-fns';
 import { Crown, Plus } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { useHiveQueenHistory } from '@/api/hooks';
-import { QUEEN_STATUS_VARIANTS, getQueenDisplayName } from '@/lib/queen-utils';
-import { QueenColorBadge } from '@/pages/queen/components/queen-color-badge';
 import { useTranslation } from 'react-i18next';
 import { ActiveQueen } from 'shared-schemas';
+import { QueenTable } from '@/pages/queen/components/queen-table';
 
 type QueenHistoryTabProps = {
   hiveId: string;
@@ -69,48 +58,7 @@ export const QueenHistoryTab: React.FC<QueenHistoryTabProps> = ({ hiveId, active
           </Button>
         </div>
       </div>
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Queen</TableHead>
-            <TableHead>Color</TableHead>
-            <TableHead>Year</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Installed</TableHead>
-            <TableHead>Replaced</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {queens.map((queen) => {
-            return (
-              <TableRow key={queen.id}>
-                <TableCell>
-                  <Link to={`/queens/${queen.id}`} className="font-medium hover:underline">
-                    {getQueenDisplayName(queen.name, queen.marking, queen.year)}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <QueenColorBadge color={queen.color} />
-                </TableCell>
-                <TableCell>{queen.year ?? '—'}</TableCell>
-                <TableCell>
-                  <Badge variant={QUEEN_STATUS_VARIANTS[queen.status ?? 'UNKNOWN'] ?? 'outline'}>
-                    {queen.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-sm">
-                  {queen.installedAt ? format(parseISO(queen.installedAt), 'PP') : '—'}
-                </TableCell>
-                <TableCell className="text-sm">
-                  {queen.replacedAt ? format(parseISO(queen.replacedAt), 'PP') : '—'}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+      <QueenTable queens={queens} showReplaced />
     </div>
   );
 };

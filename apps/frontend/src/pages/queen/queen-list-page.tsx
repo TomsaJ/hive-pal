@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { format, parseISO } from 'date-fns';
 import { Crown, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -11,18 +9,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQueens, useHives } from '@/api/hooks';
-import { QUEEN_STATUS_VARIANTS, getQueenDisplayName } from '@/lib/queen-utils';
-import { QueenColorBadge } from './components/queen-color-badge';
+import { QueenTable } from './components/queen-table';
+import { QueenResponse } from 'shared-schemas';
+
+const QueenListContent: React.FC<{
+  queens?: QueenResponse[];
+  isLoading: boolean;
+}> = ({ queens, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="flex h-32 items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!queens || queens.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <Crown className="h-12 w-12 text-muted-foreground mb-4" />
+        <p className="text-muted-foreground">No queens found.</p>
+        <Button asChild className="mt-4" size="sm">
+          <Link to="/queens/create">Add your first queen</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return <QueenTable queens={queens} showHive />;
+};
 
 export const QueenListPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -30,8 +47,8 @@ export const QueenListPage = () => {
 
   const { data: hives } = useHives();
   const { data: queens, isLoading } = useQueens({
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-    hiveId: hiveFilter !== 'all' ? hiveFilter : undefined,
+    status: statusFilter === 'all' ? undefined : statusFilter,
+    hiveId: hiveFilter === 'all' ? undefined : hiveFilter,
   });
 
   return (
@@ -88,66 +105,7 @@ export const QueenListPage = () => {
         </CardContent>
       </Card>
 
-      {isLoading ? (
-        <div className="flex h-32 items-center justify-center">
-          <div className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        </div>
-      ) : !queens || queens.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Crown className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">No queens found.</p>
-          <Button asChild className="mt-4" size="sm">
-            <Link to="/queens/create">Add your first queen</Link>
-          </Button>
-        </div>
-      ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Queen</TableHead>
-                <TableHead>Color</TableHead>
-                <TableHead>Year</TableHead>
-                <TableHead>Hive</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Installed</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {queens.map((queen) => {
-                return (
-                  <TableRow key={queen.id}>
-                    <TableCell>
-                      <Link to={`/queens/${queen.id}`} className="font-medium hover:underline">
-                        {getQueenDisplayName(queen.name, queen.marking, queen.year)}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <QueenColorBadge color={queen.color} />
-                    </TableCell>
-                    <TableCell>{queen.year ?? '—'}</TableCell>
-                    <TableCell>
-                      {queen.hiveName ? (
-                        <span className="text-sm">{queen.hiveName}</span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground italic">No hive</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={QUEEN_STATUS_VARIANTS[queen.status ?? 'UNKNOWN'] ?? 'outline'}>
-                        {queen.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {queen.installedAt ? format(parseISO(queen.installedAt), 'PP') : '—'}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      <QueenListContent queens={queens} isLoading={isLoading} />
     </div>
   );
 };
