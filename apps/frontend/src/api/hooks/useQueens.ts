@@ -30,7 +30,8 @@ export const useQueens = (
       const urlParams = new URLSearchParams();
       if (params?.hiveId) urlParams.append('hiveId', params.hiveId);
       if (params?.status) urlParams.append('status', params.status);
-      const url = `/api/queens${urlParams.toString() ? `?${urlParams.toString()}` : ''}`;
+      const query = urlParams.toString();
+      const url = query ? `/api/queens?${query}` : '/api/queens';
       const response = await apiClient.get<QueenResponse[]>(url);
       return response.data;
     },

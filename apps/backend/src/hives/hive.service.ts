@@ -43,6 +43,14 @@ export class HiveService {
     this.logger.setContext('HiveService');
   }
 
+  private resolveStatusFilter(
+    filter: HiveFilter,
+  ): HiveStatus | undefined {
+    if (filter.status) return filter.status as HiveStatus;
+    if (filter.includeInactive) return undefined;
+    return HiveStatus.ACTIVE;
+  }
+
   private async mapFeaturePhotoUrl(
     featurePhoto: { id: string; storageKey: string } | null,
   ): Promise<{
@@ -188,11 +196,7 @@ export class HiveService {
           id: filter.apiaryId,
           userId: filter.userId,
         },
-        status: filter.status
-          ? (filter.status as HiveStatus)
-          : filter.includeInactive
-            ? undefined
-            : 'ACTIVE',
+        status: this.resolveStatusFilter(filter),
       },
       include: includeConfig,
     });
