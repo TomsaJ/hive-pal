@@ -254,6 +254,7 @@
       "closingPromptFourth": "Saisonale Überlegungen auf der Grundlage der bisherigen Inspektionsergebnisse",
       "fed": "Fütterung: {{amount}} {{unit}} von {{feedType}}{{concentration}}",
       "feeding": "Gefüttert",
+      "treatedWith": "Behandelt mit {{product}} ({{quantity}} {{unit}})",
       "treatment": "Behandlung",
       "addedFrame": "{{quantity}} Rahmen hinzugefügt",
       "addedFrames": "{{quantity}} Rähmchen hinzugefügt",

@@ -195,12 +195,10 @@ export function generateHivePrompt(
     for (const insp of completedInspections) {
       lines.push('');
       lines.push(`### ${formatDate(insp.date)}`);
-
-      if (insp.temperature !== null && insp.temperature !== undefined) {
-        lines.push('- ' + i18n.t('hive:llmPrompt.textArea.temperature', { temperature: insp.temperature, defaultValue: 'Temperature: {{temperature}}°C' }));}
-      if (insp.weatherConditions) {
+      if (insp.temperature !== null && insp.temperature !== undefined)
+        lines.push('- ' + i18n.t('hive:llmPrompt.textArea.temperature', { temperature: insp.temperature, defaultValue: 'Temperature: {{temperature}}°C', }));
+      if (insp.weatherConditions)
         lines.push('- ' + i18n.t('hive:llmPrompt.textArea.weather', { weatherConditions: insp.weatherConditions, defaultValue: 'Weather: {{weatherConditions}}' }));
-      }
 
       // Observations — only non-null fields
       if (insp.observations) {
