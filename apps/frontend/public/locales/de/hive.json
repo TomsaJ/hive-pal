@@ -188,7 +188,7 @@
   },
   "llmPrompt": {
     "title": "LLM-Prompt für {{hiveName}}",
-    "description": "Kopiere diese Eingabeaufforderung und füge sie in deinen bevorzugten KI-Assistenten ein, um\n Bewertung des Bienenstockzustands. Du kannst den Text vor dem Kopieren bearbeiten.",
+    "description": "Kopiere diese Eingabeaufforderung und füge sie in deinen bevorzugten KI-Assistenten ein, um\nBewertung des Bienenstockzustands. Du kannst den Text vor dem Kopieren bearbeiten.",
     "charactersLength": "{{length}} Zeichen",
     "promptCopied": "Kopiert",
     "promptCopyToClipboard": "In die Zwischenablage kopieren",
@@ -257,6 +257,7 @@
       "closingPromptSecond": "Alle Probleme oder Fragen, die dir auffallen",
       "closingPromptThird": "Empfohlene Maßnahmen für den Imker",
       "closingPromptFourth": "Saisonale Überlegungen auf der Grundlage der bisherigen Inspektionsergebnisse",
+      "fed": "Fütterung: {{Menge}} {{Einheit}} von {{Futtertyp}}{{Konzentration}}",
       "feeding": "Gefüttert",
       "treatment": "Behandlung",
       "addedFrame": "{{quantity}} Rahmen hinzugefügt",
