@@ -197,6 +197,8 @@
     "textArea": {
       "description": "Du bist ein erfahrener Imkereiberater. Bitte analysiere die folgenden Daten zum Bienenstock und gib deine Einschätzung ab.",
       "hiveOverview": "Bienenstockübersicht",
+      "name": "Name",
+      "status": "Status",
       "nameValue": "Name: {{name}}",
       "statusValue": "Status: {{status}}",
       "installationDate": "Aufstellungsdatum",

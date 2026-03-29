@@ -9,7 +9,7 @@ import i18n from '@/lib/i18n';
 import { getDateLocale } from '@/utils/locale-utils.ts';
 
 function formatDate(date: string | Date): string {
-  return format(new Date(date), 'd. MMM yyyy', { locale: getDateLocale(i18n.language), });
+  return format(new Date(date), 'P', { locale: getDateLocale(i18n.language), });
 }
 
 function getActionLabel(action: ActionResponse): string {
@@ -92,7 +92,7 @@ export function generateHivePrompt(
   lines.push('');
 
   // Hive overview
-  lines.push(`## ${i18n.t('hive:llmPrompt.textArea.hiveOverview') || 'Hive Overview'}`);
+  lines.push('## ' + i18n.t('hive:llmPrompt.textArea.hiveOverview') || 'Hive Overview');
   lines.push('- ' + i18n.t('hive:llmPrompt.textArea.nameValue', { name: hive.name }) || `Name: ${hive.name}`);
   lines.push('- ' + i18n.t('hive:llmPrompt.textArea.statusValue', { status: hive.status }) || `Status: ${hive.status}`);
   if (hive.installationDate) {
@@ -103,7 +103,7 @@ export function generateHivePrompt(
     lines.push(`- ${installDateLabel}: ${formatDate(hive.installationDate)} (${age} ${oldLabel})`);
   }
   if (hive.notes) {
-    lines.push('- ' + i18n.t('hive:llmPrompt.textArea.notes', { status: hive.notes }) || `Notes: ${hive.notes}`,);
+    lines.push('- ' + i18n.t('hive:llmPrompt.textArea.notes', { notes: hive.notes }) || `Notes: ${hive.notes}`,);
   }
   lines.push('');
 
@@ -129,7 +129,7 @@ export function generateHivePrompt(
     const sortedBoxes = [...hive.boxes].sort((a, b) => a.position - b.position);
     for (const box of sortedBoxes) {
       const parts = [i18n.t('hive:llmPrompt.textArea.position',{ position: box.position, type: box.type }) || `Position ${box.position}: ${box.type}`,];
-      if (box.variant) parts.push('- ' + i18n.t('hive:llmPrompt.textArea.variant',{variant: box.variant}) || `variant=${box.variant}`);
+      if (box.variant) parts.push(i18n.t('hive:llmPrompt.textArea.variant', { variant: box.variant }) || `variant=${box.variant}`,);
       parts.push(`${box.frameCount} ${i18n.t('hive:llmPrompt.textArea.frames') || 'frames'}`,);
       if (box.hasExcluder) parts.push(i18n.t('hive:llmPrompt.textArea.withExcluder') || 'with excluder',);
       if (box.winterized) parts.push(i18n.t('hive:llmPrompt.textArea.winterized') || 'winterized');

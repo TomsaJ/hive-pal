@@ -39,7 +39,7 @@ export function LlmPromptDialog({ hiveId, hiveName }: LlmPromptDialogProps) {
       await navigator.clipboard.writeText(promptText);
       setCopied(true);
       toast.success(
-        t('llmPrompt.promptCopiedToClipboard', { defaultValue:'Prompt copied to clipboard' }));
+        t('llmPrompt.promptCopiedToClipboard', { defaultValue: 'Prompt copied to clipboard' }));
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error(
@@ -57,7 +57,7 @@ export function LlmPromptDialog({ hiveId, hiveName }: LlmPromptDialogProps) {
           data-umami-event="LLM Prompt Open"
         >
           <BotMessageSquare className="mr-2 h-4 w-4" />
-          LLM Prompt
+          {t('manage.llmPrompt', { defaultValue: 'LLM Prompt' })}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
