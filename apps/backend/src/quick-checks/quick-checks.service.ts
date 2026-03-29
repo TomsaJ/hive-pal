@@ -44,19 +44,10 @@ export class QuickChecksService {
     dto: CreateQuickCheck,
     filter: ApiaryUserFilter,
   ): Promise<QuickCheckResponse> {
-    // Verify apiary belongs to user
-    const apiary = await this.prisma.apiary.findFirst({
-      where: { id: dto.apiaryId },
-    });
-
-    if (!apiary) {
-      throw new NotFoundException(`Apiary with ID ${dto.apiaryId} not found`);
-    }
-
     // If hiveId is provided, verify it belongs to the apiary
     if (dto.hiveId) {
       const hive = await this.prisma.hive.findFirst({
-        where: { id: dto.hiveId, apiaryId: dto.apiaryId },
+        where: { id: dto.hiveId, apiaryId: filter.apiaryId },
       });
 
       if (!hive) {
@@ -68,7 +59,7 @@ export class QuickChecksService {
 
     const quickCheck = await this.prisma.quickCheck.create({
       data: {
-        apiaryId: dto.apiaryId,
+        apiaryId: filter.apiaryId,
         hiveId: dto.hiveId ?? null,
         date: dto.date ? new Date(dto.date) : new Date(),
         note: dto.note ?? null,
