@@ -212,6 +212,18 @@ export const UserWizardPage = () => {
             </div>
           )}
 
+          {step === 2 && (
+            <div className="w-full flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setStep(3)}
+                data-umami-event="Onboarding Skip Hive"
+              >
+                {t('hive.skip')}
+              </Button>
+            </div>
+          )}
+
           {step === 3 && (
             <div className="w-full">
               <Button

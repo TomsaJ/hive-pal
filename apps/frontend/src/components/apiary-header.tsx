@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useApiaryStore } from '@/hooks/use-apiary';
 import { useApiaryStatistics } from '@/api/hooks/useReports';
 import { useApiary, useHives } from '@/api/hooks';
+import { useImageDisplayStore } from '@/stores/image-display-store';
 import {
   useOverdueInspections,
   useDueTodayInspections,
@@ -37,6 +38,8 @@ export const ApiaryHeader: React.FC = () => {
     enabled: !!activeApiaryId,
   });
   const { data: hives } = useHives();
+
+  const { mode: imageMode } = useImageDisplayStore();
 
   const { data: overdueInspections, isLoading: overdueLoading } =
     useOverdueInspections();
@@ -119,18 +122,21 @@ export const ApiaryHeader: React.FC = () => {
   };
 
   return (
-    <Card className="h-full flex flex-col overflow-hidden gap-0 py-0 border-none shadow-none">
-      {apiary?.featurePhotoUrl && (
+    <Card className={`h-full flex overflow-hidden gap-0 py-0 border-none shadow-none ${imageMode === 'side' && apiary?.featurePhotoUrl ? 'flex-col sm:flex-row' : 'flex-col'}`}>
+      {imageMode !== 'hidden' && apiary?.featurePhotoUrl && (
         <img
           src={apiary.featurePhotoUrl}
           alt={`${apiary.name} feature photo`}
-          className="w-full h-32 object-cover"
+          className={imageMode === 'side'
+            ? 'w-full sm:w-[140px] h-32 sm:h-auto object-cover flex-shrink-0'
+            : 'w-full h-32 object-cover'}
         />
       )}
+      <div className="flex-1 min-w-0">
       <div className="flex items-center justify-between px-4 pt-3 pb-1">
         <CardTitle className="text-lg flex items-center gap-2">
           <PieChart className="h-5 w-5" />
-          {t('reports.widget.title')}
+          {apiary?.name ?? t('reports.widget.title')}
         </CardTitle>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
@@ -264,6 +270,7 @@ export const ApiaryHeader: React.FC = () => {
           )}
         </div>
       )}
+      </div>
     </Card>
   );
 };

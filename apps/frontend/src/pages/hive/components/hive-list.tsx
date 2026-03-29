@@ -13,6 +13,7 @@ import {
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { buildBoxGradient } from '@/utils/box-gradient';
+import { useImageDisplayStore } from '@/stores/image-display-store';
 
 type HiveListProps = {
   hives: HiveResponse[];
@@ -51,24 +52,33 @@ const HiveCard: React.FC<{ hive: HiveResponse }> = ({ hive }) => {
   };
 
   const featurePhotoUrl = hive.featurePhotoUrl || hiveDetails?.featurePhotoUrl;
+  const { mode: imageMode } = useImageDisplayStore();
+  const isSide = imageMode === 'side';
+
+  const imageElement = imageMode !== 'hidden' ? (
+    featurePhotoUrl ? (
+      <img
+        src={featurePhotoUrl}
+        alt={`${hive.name} feature photo`}
+        className={isSide
+          ? 'w-full sm:w-[140px] h-32 sm:h-auto min-h-[120px] object-cover flex-shrink-0'
+          : 'w-full h-32 object-cover'}
+      />
+    ) : (
+      <div
+        className={isSide
+          ? 'w-full sm:w-[140px] h-32 sm:h-auto min-h-[120px]  flex-shrink-0'
+          : 'w-full h-32 '}
+        style={{ background: buildBoxGradient(hiveDetails?.boxes) }}
+      />
+    )
+  ) : null;
 
   return (
-    <Card className="overflow-hidden gap-0 py-0">
-      {/* Feature photo banner or gradient fallback */}
-      {featurePhotoUrl ? (
-        <img
-          src={featurePhotoUrl}
-          alt={`${hive.name} feature photo`}
-          className="w-full h-32 object-cover"
-        />
-      ) : (
-        <div
-          className="w-full h-32 opacity-60"
-          style={{ background: buildBoxGradient(hiveDetails?.boxes) }}
-        />
-      )}
+    <Card className={`overflow-hidden gap-0 py-0 ${isSide ? 'flex flex-col sm:flex-row' : ''}`}>
+      {imageElement}
 
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1 px-4 py-3">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 px-4 py-3 flex-1 min-w-0">
         {/* Row 1: Name + Status/Score */}
         <div className="min-w-0">
           <CardTitle className="truncate">{hive.name}</CardTitle>

@@ -11,6 +11,7 @@ import {
   Calendar,
   BarChart3,
   MessageSquare,
+  Crown,
   FolderOpen,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -61,7 +62,19 @@ const getNavData = (t: TFunction<'common'>) => ({
       ],
     },
     {
-      title: t('navigation.inspections', { defaultValue: 'Inspections' }),
+      title: t('navigation.queens'),
+      url: '/queens',
+      icon: Crown,
+      isActive: true,
+      items: [
+        {
+          title: t('navigation.allQueens'),
+          url: '/queens',
+        },
+      ],
+    },
+    {
+      title: t('navigation.inspections'),
       url: '/inspections',
       icon: PieChart,
       isActive: true,
