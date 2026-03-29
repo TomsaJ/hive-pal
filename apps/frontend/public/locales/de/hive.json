@@ -183,7 +183,7 @@
   },
   "llmPrompt": {
     "title": "LLM-Prompt für {{hiveName}}",
-    "description": "Kopiere diese Eingabeaufforderung und füge sie in deinen bevorzugten KI-Assistenten ein, um\nBewertung des Bienenstockzustands. Du kannst den Text vor dem Kopieren bearbeiten.",
+    "description": "Kopiere diese Eingabeaufforderung und füge sie in deinen bevorzugten KI-Assistenten ein, um\n eine Bewertung des Bienenstockzustands zu erhalten. Du kannst den Text vor dem Kopieren bearbeiten.",
     "charactersLength": "{{length}} Zeichen",
     "promptCopied": "Kopiert",
     "promptCopyToClipboard": "In die Zwischenablage kopieren",
