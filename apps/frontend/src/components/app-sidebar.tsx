@@ -149,6 +149,12 @@ const getNavData = (t: TFunction<'common'>) => ({
           }),
           url: '/tools/syrup-calculator',
         },
+        {
+          title: t('navigation.broodTimeline', {
+            defaultValue: 'Brood Timeline',
+          }),
+          url: '/tools/brood-timeline',
+        },
       ],
     },
     {

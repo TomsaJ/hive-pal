@@ -137,6 +137,11 @@ const SyrupCalculatorPage = lazyWithRetry(() =>
     default: m.SyrupCalculatorPage,
   })),
 );
+const BroodTimelinePage = lazyWithRetry(() =>
+  import('@/pages/tools/brood-timeline-page').then(m => ({
+    default: m.BroodTimelinePage,
+  })),
+);
 
 // Loading fallback component
 function PageLoader() {
@@ -351,6 +356,14 @@ const router = createBrowserRouter([
         element: (
           <LazyPage>
             <SyrupCalculatorPage />
+          </LazyPage>
+        ),
+      },
+      {
+        path: '/tools/brood-timeline',
+        element: (
+          <LazyPage>
+            <BroodTimelinePage />
           </LazyPage>
         ),
       },
