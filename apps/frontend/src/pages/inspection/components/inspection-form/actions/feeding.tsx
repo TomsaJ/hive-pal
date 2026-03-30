@@ -224,7 +224,7 @@ export const FeedingForm: React.FC<FeedingActionProps> = ({
       type: 'FEEDING',
       feedType: feedType === 'OTHER' ? customFeedName.trim() : feedType,
       quantity: apiQuantity,
-      concentration,
+      concentration: feedType === 'SYRUP' ? concentration : undefined,
       unit: apiUnit,
       notes: notes.trim() || undefined,
     });
@@ -284,7 +284,9 @@ export const FeedingView: React.FC<FeedingActionProps> = ({
         <div className={'flex gap-5 text-sm'}>
           <Badge>{getFeedTypeLabel(action.feedType)}</Badge>
           <span>{getDisplayValue()}</span>
-          <span>{action.concentration}</span>
+          {action.feedType === 'SYRUP' && action.concentration && (
+            <span>{action.concentration}</span>
+          )}
         </div>
         {action.notes && (
           <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
