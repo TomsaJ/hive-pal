@@ -64,7 +64,8 @@ export class StorageController {
 
     const fileSize = fileStats.size;
     const contentType = mime.lookup(filePath) || 'application/octet-stream';
-    const range = req.headers.range;
+    const rangeHeader = req.headers.range;
+    const range = typeof rangeHeader === 'string' ? rangeHeader : undefined;
 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'private, max-age=3600');
