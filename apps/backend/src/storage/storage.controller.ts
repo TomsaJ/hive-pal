@@ -13,7 +13,7 @@ import { Request, Response } from 'express';
 import * as mime from 'mime-types';
 import { StorageService } from './storage.interface';
 import { LocalStorageService } from './local-storage.service';
-import { createReadStream } from 'node:fs';
+import { createReadStream, type Stats } from 'node:fs';
 import { stat } from 'node:fs/promises';
 
 @Controller('storage')
@@ -21,7 +21,7 @@ export class StorageController {
   constructor(
     @Inject(StorageService)
     private readonly storageService: StorageService,
-  ) { }
+  ) {}
 
   @Get('files/*key')
   async serveFile(
@@ -55,7 +55,7 @@ export class StorageController {
       throw new HttpException('Invalid path', HttpStatus.BAD_REQUEST);
     }
 
-    let fileStats;
+    let fileStats: Stats;
     try {
       fileStats = await stat(filePath);
     } catch {
@@ -63,7 +63,11 @@ export class StorageController {
     }
 
     const fileSize = fileStats.size;
-    const contentType = mime.lookup(filePath) || 'application/octet-stream';
+
+    const mimeType = mime.lookup(filePath);
+    const contentType =
+      typeof mimeType === 'string' ? mimeType : 'application/octet-stream';
+
     const rangeHeader = req.headers.range;
     const range = typeof rangeHeader === 'string' ? rangeHeader : undefined;
 
@@ -71,12 +75,14 @@ export class StorageController {
     res.setHeader('Cache-Control', 'private, max-age=3600');
     res.setHeader('Accept-Ranges', 'bytes');
 
+    // No range → send full file
     if (!range) {
       res.setHeader('Content-Length', fileSize);
       createReadStream(filePath).pipe(res);
       return;
     }
 
+    // Parse range
     const match = /bytes=(\d*)-(\d*)/.exec(range);
     if (!match) {
       res.status(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE);
