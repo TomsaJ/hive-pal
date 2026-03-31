@@ -58,7 +58,7 @@ export class LocalStorageService
   }
   // eslint-disable-next-line @typescript-eslint/require-await
 
-async generateDownloadUrl(
+generateDownloadUrl(
   key: string,
   expiresIn: number = 3600,
 ): Promise<string> {
@@ -72,10 +72,12 @@ async generateDownloadUrl(
   const relativePath = `/api/storage/files/${encodedKey}?token=${token}&expires=${expires}`;
 
   if (!backendPublicUrl) {
-    return relativePath;
+    return Promise.resolve(relativePath);
   }
 
-  return `${backendPublicUrl.replace(/\/$/, '')}${relativePath}`;
+  return Promise.resolve(
+    `${backendPublicUrl.replace(/\/$/, '')}${relativePath}`,
+  );
 }
 
   async deleteObject(key: string): Promise<void> {
