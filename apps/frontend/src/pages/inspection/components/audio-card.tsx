@@ -26,6 +26,31 @@ interface RecordingRowProps {
   isDeleting: boolean;
 }
 
+interface AiTranscriptSegment {
+  start: number;
+  end: number;
+  text: string;
+}
+
+interface AiTranscript {
+  language: string | null;
+  language_probability: number | null;
+  duration: number | null;
+  text: string;
+  segments: AiTranscriptSegment[];
+}
+
+interface AiAnalysisResult {
+  status?: string;
+  transcript?: AiTranscript;
+  inspectionDraft?: unknown;
+  files?: {
+    transcript_txt?: string;
+    transcript_json?: string;
+    recommendation_json?: string;
+  };
+}
+
 function RecordingRow({
   inspectionId,
   recording,
@@ -35,7 +60,7 @@ function RecordingRow({
 }: RecordingRowProps) {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isLoadingUrl, setIsLoadingUrl] = useState(false);
-  const [aiResult, setAiResult] = useState<any | null>(null);
+  const [aiResult, setAiResult] = useState<AiAnalysisResult | null>(null);
   const [showAiOutput, setShowAiOutput] = useState(false);
 
   const analyzeMutation = useAnalyzeInspectionAudio(inspectionId, recording.id);
@@ -104,7 +129,7 @@ function RecordingRow({
           onClick={handleAnalyze}
           disabled={analyzeMutation.isPending}
         >
-          {analyzeMutation.isPending ? 'Analyzing...' : 'Create Inspection from Audio (AI)'}
+          {analyzeMutation.isPending ? 'Analyzing...' : 'Analyze using AI'}
         </Button>
       </div>
 
