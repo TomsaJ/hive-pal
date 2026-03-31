@@ -7,6 +7,24 @@ import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.interface';
 
+export interface AiTranscript {
+  text: string;
+  language?: string;
+  segments?: unknown[];
+  [key: string]: unknown;
+}
+
+export interface AiInspectionDraft {
+  [key: string]: unknown;
+}
+
+export interface AiProcessUploadResponse {
+  status: string;
+  transcript: AiTranscript;
+  inspectionDraft: AiInspectionDraft;
+  files?: Record<string, string>;
+}
+
 @Injectable()
 export class AiService {
   constructor(
@@ -16,7 +34,10 @@ export class AiService {
     private readonly storage: StorageService,
   ) {}
 
-  async analyzeInspectionAudio(inspectionId: string, audioId: string) {
+  async analyzeInspectionAudio(
+  inspectionId: string,
+  audioId: string,
+): Promise<AiProcessUploadResponse> {
     const enabled = this.config.get<string>('AI_ENABLED') === 'true';
     if (!enabled) throw new BadRequestException('AI is disabled');
 
@@ -43,7 +64,7 @@ export class AiService {
     const aiUrl = `${this.config.get<string>('AI_SERVICE_URL')}/process-upload`;
 
     const result = await firstValueFrom(
-      this.http.post(aiUrl, form, {
+      this.http.post<AiProcessUploadResponse>(aiUrl, form, {
         headers: {
           ...form.getHeaders(),
           Authorization: `Bearer ${this.config.get<string>('AI_SERVICE_API_KEY')}`,
@@ -54,13 +75,17 @@ export class AiService {
       }),
     );
 
+    const aiResponse: AiProcessUploadResponse = result.data;
+
     await this.prisma.inspectionAudio.update({
       where: { id: audio.id },
       data: {
         transcriptionStatus: 'COMPLETED',
-        transcription: result.data?.transcript?.text ?? null,
+        transcription: aiResponse.transcript.text,
       },
     });
+
+    return aiResponse;
 
     return result.data;
   }
