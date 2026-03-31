@@ -42,7 +42,7 @@ function RecordingRow({
     let cancelled = false;
 
     const loadUrl = async () => {
-      if (audioUrl || isLoadingUrl) return;
+      if (audioUrl) return;
 
       setIsLoadingUrl(true);
       try {
@@ -59,12 +59,12 @@ function RecordingRow({
       }
     };
 
-    loadUrl();
+    void loadUrl();
 
     return () => {
       cancelled = true;
     };
-  }, [audioUrl, isLoadingUrl, getDownloadUrl, recording.id]);
+  }, [audioUrl, getDownloadUrl, recording.id]);
 
   const handleAnalyze = async () => {
     try {
@@ -117,7 +117,7 @@ function RecordingRow({
           ) : (
             <>
               <Sparkles className="size-4" />
-              Analyze with AI
+              Create Inspection from Audio (AI)
             </>
           )}
         </Button>
