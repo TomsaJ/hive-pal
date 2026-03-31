@@ -133,6 +133,7 @@ export const HiveForm: React.FC<HiveFormProps> = ({
         },
         inspection: {
           frequencyDays: 7,
+          calendarEnabled: true,
         },
       },
     },

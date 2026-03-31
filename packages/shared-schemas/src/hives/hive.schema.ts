@@ -13,6 +13,7 @@ export const hiveSettingsSchema = z.object({
   }).optional(),
   inspection: z.object({
     frequencyDays: z.number().int().positive().default(7),
+    calendarEnabled: z.boolean().default(true),
   }).optional(),
 }).optional();
 

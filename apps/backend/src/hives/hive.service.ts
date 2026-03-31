@@ -80,6 +80,7 @@ export class HiveService {
       },
       inspection: {
         frequencyDays: 7,
+        calendarEnabled: true,
       },
     };
 

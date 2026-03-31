@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Body,
   Query,
   Param,
   UseGuards,
@@ -123,6 +125,55 @@ export class CalendarController {
 
     // Same logic as getSubscriptionUrl - generates a new token
     return this.getSubscriptionUrl(apiaryId, req);
+  }
+
+  @Patch('apiary/:apiaryId/calendar-inspections')
+  @UseGuards(JwtAuthGuard)
+  async toggleCalendarInspections(
+    @Param('apiaryId') apiaryId: string,
+    @Body() body: { enabled: boolean },
+    @Req() req: RequestWithUser & Request,
+  ): Promise<{ updated: number }> {
+    this.logger.log(
+      `Setting calendar inspections enabled=${body.enabled} for all hives in apiary ${apiaryId}`,
+    );
+
+    // Validate user owns this apiary
+    const apiary = await this.prisma.apiary.findFirst({
+      where: { id: apiaryId, userId: req.user.id },
+    });
+
+    if (!apiary) {
+      throw new NotFoundException('Apiary not found');
+    }
+
+    // Get all active hives in this apiary
+    const hives = await this.prisma.hive.findMany({
+      where: { apiaryId, status: 'ACTIVE' },
+      select: { id: true, settings: true },
+    });
+
+    // Update each hive's settings
+    let updated = 0;
+    for (const hive of hives) {
+      const settings = (hive.settings as Record<string, unknown>) || {};
+      const inspection = (settings.inspection as Record<string, unknown>) || {};
+      await this.prisma.hive.update({
+        where: { id: hive.id },
+        data: {
+          settings: {
+            ...settings,
+            inspection: {
+              ...inspection,
+              calendarEnabled: body.enabled,
+            },
+          },
+        },
+      });
+      updated++;
+    }
+
+    return { updated };
   }
 
   @Get('apiary/:apiaryId/ical.ics')
