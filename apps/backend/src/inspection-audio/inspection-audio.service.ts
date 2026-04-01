@@ -16,6 +16,19 @@ export interface UploadAudioDto {
   duration?: string; // Comes as string from form-data
 }
 
+interface AiProcessUploadResponse {
+  status?: string;
+  transcript?: {
+    text?: string | null;
+  };
+  inspectionDraft?: Prisma.InputJsonValue | null;
+  files?: {
+    transcript_txt?: string;
+    transcript_json?: string;
+    recommendation_json?: string;
+  };
+}
+
 export interface AudioResponse {
   id: string;
   inspectionId: string;
@@ -363,13 +376,14 @@ export class InspectionAudioService {
     await this.prisma.inspectionAudio.update({
       where: { id: audioId },
       data: {
-        transcriptionStatus: 'PENDING',
-        analysisResult: Prisma.JsonNull,
+        transcription: result.transcript?.text ?? null,
+        transcriptionStatus: 'COMPLETED',
+        analysisResult: result.inspectionDraft ?? Prisma.JsonNull,
         analysisError: null,
-        analysisCompletedAt: null,
+        analysisCompletedAt: new Date(),
       },
     });
-
+    
     void this.runAiAnalysisInBackground(audioId, audio.storageKey);
 
     return { status: 'PENDING' };
@@ -410,7 +424,8 @@ private async runAiAnalysisInBackground(
       throw new Error(`AI service returned ${response.status}`);
     }
 
-    const result = await response.json();
+    const rawResult: unknown = await response.json();
+    const result = rawResult as AiProcessUploadResponse;
 
     await this.prisma.inspectionAudio.update({
       where: { id: audioId },
