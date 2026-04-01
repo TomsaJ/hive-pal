@@ -300,6 +300,7 @@
     "editInspection": "Edit Inspection",
     "printDetails": "Print Details",
     "deleteInspection": "Delete Inspection",
+    "deleteFailed": "Failed to delete inspection",
     "relatedActions": "Related Actions",
     "viewHive": "View Hive",
     "newInspection": "New Inspection",
