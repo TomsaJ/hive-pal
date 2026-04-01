@@ -30,20 +30,6 @@ interface RecordingRowProps {
   isDeleting: boolean;
 }
 
-interface AiTranscriptSegment {
-  start: number;
-  end: number;
-  text: string;
-}
-
-interface AiTranscript {
-  language: string | null;
-  language_probability: number | null;
-  duration: number | null;
-  text: string;
-  segments: AiTranscriptSegment[];
-}
-
 function RecordingRow({
   inspectionId,
   recording,

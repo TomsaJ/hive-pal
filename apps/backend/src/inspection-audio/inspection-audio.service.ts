@@ -377,24 +377,26 @@ export class InspectionAudioService {
         data: { transcriptionStatus: 'PROCESSING' },
       });
 
-      // 1. download audio bytes from storage
-      const downloadUrl = await this.storageService.generateDownloadUrl(storageKey, 3600);
-      const audioResponse = await fetch(downloadUrl);
+        const downloadUrl = await this.storageService.generateDownloadUrl(storageKey, 3600);
+        const audioResponse = await fetch(downloadUrl);
 
-      if (!audioResponse.ok) {
-        throw new Error(`Failed to download audio file: ${audioResponse.status}`);
-      }
+        if (!audioResponse.ok) {
+          throw new Error(`Failed to download audio file: ${audioResponse.status}`);
+        }
 
-      const fileArrayBuffer = await audioResponse.arrayBuffer();
-      const fileBuffer = Buffer.from(fileArrayBuffer);
+        const fileArrayBuffer = await audioResponse.arrayBuffer();
 
-      // 2. send multipart/form-data to Flask AI service
-      const fileBytes = new Uint8Array(
-        fileBuffer.buffer,
-        fileBuffer.byteOffset,
-        fileBuffer.byteLength,
-      );
-      formData.append('file', new Blob([fileBytes]), 'audio.webm');
+        const formData = new FormData();
+        const fileBlob = new Blob([fileArrayBuffer], { type: 'audio/webm' });
+        formData.append('file', fileBlob, 'audio.webm');
+
+        const response = await fetch(`${this.aiServiceBaseUrl}/process-upload`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.aiApiKey}`,
+          },
+          body: formData,
+        });
 
       const response = await fetch(`${this.aiServiceBaseUrl}/process-upload`, {
         method: 'POST',
