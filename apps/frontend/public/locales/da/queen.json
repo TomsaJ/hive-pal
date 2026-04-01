@@ -53,7 +53,8 @@
         "addQueen": "Tilføj dronning",
         "editQueen": "Rediger dronning",
         "viewDetails": "Vis detaljer",
-        "manageQueen": "Administrer dronning"
+        "manageQueen": "Administrer dronning",
+        "transferQueen": "Overflyt dronning"
     },
     "form": {
         "selectHive": "Vælg et stade",

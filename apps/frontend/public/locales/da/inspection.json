@@ -124,7 +124,8 @@
         "shareList": "Del liste",
         "doInspection": "Udfør inspektion",
         "reschedule": "Omlægge",
-        "completeInspection": "Færdiggør inspektion"
+        "completeInspection": "Færdiggør inspektion",
+        "addInspection": "Tilføj inspektion"
     },
     "messages": {
         "exportComingSoon": "Funktionen \"eksporter\" kommer snart",
@@ -161,7 +162,7 @@
         "strength": "Styrke",
         "cappedBrood": "Forseglet yngel",
         "uncappedBrood": "Åben yngel",
-        "honeyStores": "Honning mængde",
+        "honeyStores": "Honning beholdning",
         "pollenStores": "Pollen beholdning",
         "queenCells": "Dronningeceller",
         "swarmCells": "Sværmceller",
