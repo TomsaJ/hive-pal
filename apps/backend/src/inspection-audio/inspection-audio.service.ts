@@ -56,6 +56,11 @@ export class InspectionAudioService {
     this.maxFileSize = Number(
       this.configService.get('INSPECTION_AUDIO_MAX_FILE_SIZE') ?? 10485760,
     );
+
+    this.aiServiceBaseUrl =
+      this.configService.get<string>('AI_SERVICE_BASE_URL') ?? 'http://hivepal-ai:8008';
+
+    this.aiApiKey = this.configService.get<string>('AI_API_KEY') ?? '';
   }
 
   /**
@@ -370,73 +375,68 @@ export class InspectionAudioService {
     return { status: 'PENDING' };
   }
 
-  private async runAiAnalysisInBackground(audioId: string, storageKey: string): Promise<void> {
-    try {
-      await this.prisma.inspectionAudio.update({
-        where: { id: audioId },
-        data: { transcriptionStatus: 'PROCESSING' },
-      });
+private async runAiAnalysisInBackground(
+  audioId: string,
+  storageKey: string,
+): Promise<void> {
+  try {
+    await this.prisma.inspectionAudio.update({
+      where: { id: audioId },
+      data: { transcriptionStatus: 'PROCESSING' },
+    });
 
-        const downloadUrl = await this.storageService.generateDownloadUrl(storageKey, 3600);
-        const audioResponse = await fetch(downloadUrl);
+    const downloadUrl = await this.storageService.generateDownloadUrl(storageKey, 3600);
+    const audioResponse = await fetch(downloadUrl);
 
-        if (!audioResponse.ok) {
-          throw new Error(`Failed to download audio file: ${audioResponse.status}`);
-        }
-
-        const fileArrayBuffer = await audioResponse.arrayBuffer();
-
-        const formData = new FormData();
-        const fileBlob = new Blob([fileArrayBuffer], { type: 'audio/webm' });
-        formData.append('file', fileBlob, 'audio.webm');
-
-        const response = await fetch(`${this.aiServiceBaseUrl}/process-upload`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.aiApiKey}`,
-          },
-          body: formData,
-        });
-
-      const response = await fetch(`${this.aiServiceBaseUrl}/process-upload`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.aiApiKey}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`AI service returned ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      await this.prisma.inspectionAudio.update({
-        where: { id: audioId },
-        data: {
-          transcription: result?.transcript?.text ?? null,
-          transcriptionStatus: 'COMPLETED',
-          analysisResult: result?.inspectionDraft ?? Prisma.JsonNull,
-          analysisError: null,
-          analysisCompletedAt: new Date(),
-        },
-      });
-    } catch (error) {
-      await this.prisma.inspectionAudio.update({
-        where: { id: audioId },
-        data: {
-          transcriptionStatus: 'FAILED',
-          analysisError: error instanceof Error ? error.message : String(error),
-        },
-      });
-
-      this.logger.error({
-        message: 'AI analysis failed',
-        audioId,
-        error: error instanceof Error ? error.message : String(error),
-      });
+    if (!audioResponse.ok) {
+      throw new Error(`Failed to download audio file: ${audioResponse.status}`);
     }
+
+    const fileArrayBuffer = await audioResponse.arrayBuffer();
+
+    const formData = new FormData();
+    const fileBlob = new Blob([fileArrayBuffer], { type: 'audio/webm' });
+    formData.append('file', fileBlob, 'audio.webm');
+
+    const response = await fetch(`${this.aiServiceBaseUrl}/process-upload`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.aiApiKey}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`AI service returned ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    await this.prisma.inspectionAudio.update({
+      where: { id: audioId },
+      data: {
+        transcription: result?.transcript?.text ?? null,
+        transcriptionStatus: 'COMPLETED',
+        analysisResult: result?.inspectionDraft ?? Prisma.JsonNull,
+        analysisError: null,
+        analysisCompletedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    await this.prisma.inspectionAudio.update({
+      where: { id: audioId },
+      data: {
+        transcriptionStatus: 'FAILED',
+        analysisError: error instanceof Error ? error.message : String(error),
+      },
+    });
+
+    this.logger.error({
+      message: 'AI analysis failed',
+      audioId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
   async getAiAnalysisStatus(
