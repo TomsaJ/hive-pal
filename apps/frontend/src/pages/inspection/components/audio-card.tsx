@@ -53,6 +53,12 @@ function RecordingRow({
     recording.transcriptionStatus !== undefined &&
       recording.transcriptionStatus !== 'NONE',
   );
+  const [copyTranscriptState, setCopyTranscriptState] = useState<
+    'idle' | 'copied' | 'error'
+  >('idle');
+  const [copyJsonState, setCopyJsonState] = useState<'idle' | 'copied' | 'error'>(
+    'idle',
+  );
 
   const startAiMutation = useStartInspectionAudioAi(inspectionId, recording.id);
 
@@ -111,16 +117,73 @@ function RecordingRow({
     }
   }, [effectiveStatus]);
 
-const handleAnalyze = async () => {
-  try {
-    await startAiMutation.mutateAsync();
-    setIsPollingEnabled(true);
-    setShowAiOutput(true);
-  } catch (error) {
-    console.error('AI analysis failed to start:', error);
-    alert('Failed to start AI analysis.');
-  }
-};
+  useEffect(() => {
+    if (
+      isPollingEnabled &&
+      (effectiveStatus === 'COMPLETED' || effectiveStatus === 'FAILED')
+    ) {
+      setIsPollingEnabled(false);
+    }
+  }, [effectiveStatus, isPollingEnabled]);
+
+  const resetCopyStateLater = (
+    setter: React.Dispatch<React.SetStateAction<'idle' | 'copied' | 'error'>>,
+  ) => {
+    window.setTimeout(() => setter('idle'), 1500);
+  };
+
+  const handleCopyTranscript = async () => {
+    const text = aiResult?.transcript?.text ?? '';
+    if (!text) return;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyTranscriptState('copied');
+    } catch (error) {
+      console.error('Failed to copy transcript:', error);
+      setCopyTranscriptState('error');
+    } finally {
+      resetCopyStateLater(setCopyTranscriptState);
+    }
+  };
+
+  const handleCopyJson = async () => {
+    const json = JSON.stringify(aiResult?.inspectionDraft ?? aiResult ?? {}, null, 2);
+
+    try {
+      await navigator.clipboard.writeText(json);
+      setCopyJsonState('copied');
+    } catch (error) {
+      console.error('Failed to copy JSON:', error);
+      setCopyJsonState('error');
+    } finally {
+      resetCopyStateLater(setCopyJsonState);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    try {
+      await startAiMutation.mutateAsync();
+      setIsPollingEnabled(true);
+      setShowAiOutput(true);
+    } catch (error) {
+      console.error('AI analysis failed to start:', error);
+      alert('Failed to start AI analysis.');
+    }
+  };
+
+  const transcript = aiResult?.transcript;
+  const transcriptText = transcript?.text ?? '';
+  const transcriptLanguage = transcript?.language ?? '—';
+  const transcriptLanguageProbability =
+    typeof transcript?.language_probability === 'number'
+      ? transcript.language_probability.toFixed(2)
+      : '—';
+  const transcriptDuration =
+    typeof transcript?.duration === 'number'
+      ? `${transcript.duration.toFixed(1)} s`
+      : '—';
+  const transcriptSegmentCount = transcript?.segments?.length ?? 0;
 
   return (
     <div className="space-y-3 rounded-lg border p-4">
@@ -145,18 +208,24 @@ const handleAnalyze = async () => {
         <Button
           type="button"
           onClick={handleAnalyze}
-          disabled={startAiMutation.isPending || effectiveStatus === 'PROCESSING'}
+          disabled={
+            startAiMutation.isPending ||
+            effectiveStatus === 'PROCESSING' ||
+            effectiveStatus === 'PENDING'
+          }
         >
           {startAiMutation.isPending
             ? 'Starting...'
-            : effectiveStatus === 'PROCESSING'
-              ? 'Analyzing...'
-              : 'Analyze using AI'}
+            : effectiveStatus === 'PENDING'
+              ? 'Queued...'
+              : effectiveStatus === 'PROCESSING'
+                ? 'Analyzing...'
+                : 'Analyze using AI'}
         </Button>
       </div>
 
       {shouldShowAiPanel && (
-        <div className="rounded-md border p-4 space-y-4">
+        <div className="space-y-4 rounded-md border p-4">
           <div className="flex items-center justify-between">
             <h4 className="font-medium">AI Output</h4>
             <Button
@@ -181,26 +250,92 @@ const handleAnalyze = async () => {
 
           {showAiOutput && aiResult && (
             <>
-             {aiResult?.error && (
-              <div className="text-yellow-600 text-sm">
-                AI structuring failed, but transcript is available.
-              </div>
-            )}
+              {aiResult?.error && (
+                <div className="text-sm text-yellow-600">
+                  AI structuring failed, but transcript is available.
+                </div>
+              )}
+
               <div className="space-y-2">
-                <h5 className="text-sm font-medium">Transcript</h5>
+                <div className="flex items-center justify-between gap-2">
+                  <h5 className="text-sm font-medium">Transcript</h5>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyTranscript}
+                    disabled={!transcriptText}
+                  >
+                    {copyTranscriptState === 'copied'
+                      ? 'Copied'
+                      : copyTranscriptState === 'error'
+                        ? 'Copy failed'
+                        : 'Copy Transcript'}
+                  </Button>
+                </div>
+
+                <div className="rounded-md border bg-muted/30 p-3 text-xs">
+                  <div className="mb-2 font-medium">Transcript Metadata</div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                    <div className="text-muted-foreground">Language</div>
+                    <div>{transcriptLanguage}</div>
+
+                    <div className="text-muted-foreground">Language probability</div>
+                    <div>{transcriptLanguageProbability}</div>
+
+                    <div className="text-muted-foreground">Duration</div>
+                    <div>{transcriptDuration}</div>
+
+                    <div className="text-muted-foreground">Segment count</div>
+                    <div>{transcriptSegmentCount}</div>
+                  </div>
+                </div>
+
                 <div className="rounded bg-muted p-3 text-sm whitespace-pre-wrap">
-                  {aiResult.transcript?.text || 'No transcript returned.'}
+                  {transcriptText || 'No transcript returned.'}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <h5 className="text-sm font-medium">Structured JSON</h5>
-                <pre className="rounded bg-muted p-3 text-xs overflow-x-auto">
+                <div className="flex items-center justify-between gap-2">
+                  <h5 className="text-sm font-medium">Structured JSON</h5>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyJson}
+                  >
+                    {copyJsonState === 'copied'
+                      ? 'Copied'
+                      : copyJsonState === 'error'
+                        ? 'Copy failed'
+                        : 'Copy JSON'}
+                  </Button>
+                </div>
+
+                <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
                   {JSON.stringify(aiResult.inspectionDraft ?? aiResult, null, 2)}
                 </pre>
               </div>
+
+              <details className="rounded-md border p-3 text-xs">
+                <summary className="cursor-pointer font-medium">
+                  Debug / Raw AI Response
+                </summary>
+                <pre className="mt-3 overflow-x-auto whitespace-pre-wrap">
+                  {JSON.stringify(aiResult, null, 2)}
+                </pre>
+              </details>
             </>
           )}
+
+          {showAiOutput &&
+            effectiveStatus === 'COMPLETED' &&
+            resultQuery.isLoading && (
+              <div className="text-sm text-muted-foreground">
+                Loading AI result...
+              </div>
+            )}
         </div>
       )}
     </div>
