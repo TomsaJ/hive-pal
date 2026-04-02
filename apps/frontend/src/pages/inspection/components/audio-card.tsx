@@ -80,6 +80,7 @@ function RecordingRow({
   );
 
   const aiResult = resultQuery.data;
+  const transcriptText = aiResult?.transcript?.text ?? '';
 
   const shouldShowAiPanel =
     effectiveStatus !== 'NONE' || isPollingEnabled || Boolean(aiResult);
@@ -127,17 +128,16 @@ function RecordingRow({
   }, [effectiveStatus, isPollingEnabled]);
 
   const resetCopyStateLater = (
-    setter: React.Dispatch<React.SetStateAction<'idle' | 'copied' | 'error'>>,
+    setter: (value: 'idle' | 'copied' | 'error') => void,
   ) => {
     window.setTimeout(() => setter('idle'), 1500);
   };
 
   const handleCopyTranscript = async () => {
-    const text = aiResult?.transcript?.text ?? '';
-    if (!text) return;
+    if (!transcriptText) return;
 
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(transcriptText);
       setCopyTranscriptState('copied');
     } catch (error) {
       console.error('Failed to copy transcript:', error);
@@ -171,19 +171,6 @@ function RecordingRow({
       alert('Failed to start AI analysis.');
     }
   };
-
-  const transcript = aiResult?.transcript;
-  const transcriptText = transcript?.text ?? '';
-  const transcriptLanguage = transcript?.language ?? '—';
-  const transcriptLanguageProbability =
-    typeof transcript?.language_probability === 'number'
-      ? transcript.language_probability.toFixed(2)
-      : '—';
-  const transcriptDuration =
-    typeof transcript?.duration === 'number'
-      ? `${transcript.duration.toFixed(1)} s`
-      : '—';
-  const transcriptSegmentCount = transcript?.segments?.length ?? 0;
 
   return (
     <div className="space-y-3 rounded-lg border p-4">
@@ -272,23 +259,6 @@ function RecordingRow({
                         ? 'Copy failed'
                         : 'Copy Transcript'}
                   </Button>
-                </div>
-
-                <div className="rounded-md border bg-muted/30 p-3 text-xs">
-                  <div className="mb-2 font-medium">Transcript Metadata</div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                    <div className="text-muted-foreground">Language</div>
-                    <div>{transcriptLanguage}</div>
-
-                    <div className="text-muted-foreground">Language probability</div>
-                    <div>{transcriptLanguageProbability}</div>
-
-                    <div className="text-muted-foreground">Duration</div>
-                    <div>{transcriptDuration}</div>
-
-                    <div className="text-muted-foreground">Segment count</div>
-                    <div>{transcriptSegmentCount}</div>
-                  </div>
                 </div>
 
                 <div className="rounded bg-muted p-3 text-sm whitespace-pre-wrap">
