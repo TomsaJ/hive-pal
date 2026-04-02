@@ -69,8 +69,8 @@ You need to add the ENV-Variables bleow to the hivepal container. Additionally y
 
 ```js
   AI_ENABLED: "true"
-  AI_SERVICE_URL: "http://YOUR-AI-HOST:8008"
-  AI_SERVICE_API_KEY: "change-me-long-random-string"
+  AI_SERVICE_BASE_URL: "http://YOUR-AI-HOST:8008"
+  AI_API_KEY: "change-me-long-random-string"
   AI_REQUEST_TIMEOUT_MS: "300000"
   BACKEND_PUBLIC_URL: https://mydomain.tld OR ip
   FRONTEND_URL: http://mydomain.tld OR ip

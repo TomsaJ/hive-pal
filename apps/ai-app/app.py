@@ -1,7 +1,6 @@
 import json
 import os
 import pathlib
-import threading
 import time
 import tempfile
 from flask import Flask, jsonify, request
@@ -20,12 +19,15 @@ AUDIO_INPUT_DIR = pathlib.Path(os.environ.get("AUDIO_INPUT_DIR", "/data/incoming
 TRANSCRIPTS_DIR = pathlib.Path(os.environ.get("TRANSCRIPTS_DIR", "/data/transcripts"))
 OUTPUT_DIR = pathlib.Path(os.environ.get("OUTPUT_DIR", "/data/processed"))
 
-SUPPORTED_EXTENSIONS = {".wav", ".mp3", ".m4a", ".flac", ".ogg", ".mp4", ".mpeg", ".mpga", ".webm"}
+MAX_TRANSCRIPT_CHARS = int(os.environ.get("MAX_TRANSCRIPT_CHARS", "12000"))
+
+SUPPORTED_EXTENSIONS = {
+    ".wav", ".mp3", ".m4a", ".flac", ".ogg", ".mp4", ".mpeg", ".mpga", ".webm"
+}
 
 for folder in [AUDIO_INPUT_DIR, TRANSCRIPTS_DIR, OUTPUT_DIR]:
     folder.mkdir(parents=True, exist_ok=True)
 
-# Load model once on startup
 whisper = WhisperModel(
     WHISPER_MODEL,
     device="cpu",
@@ -167,6 +169,53 @@ SCHEMA = {
     ]
 }
 
+
+def truncate_transcript(text: str, max_chars: int = MAX_TRANSCRIPT_CHARS) -> str:
+    text = (text or "").strip()
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars]
+
+
+def empty_recommendation() -> dict:
+    return {
+        "hive_name": "",
+        "weather": {
+            "temperature_c": None,
+            "condition": "",
+        },
+        "queen_seen": None,
+        "hive_strength": {
+            "condition": None,
+            "rating": None,
+        },
+        "capped_brood": {
+            "present": None,
+            "rating": None,
+        },
+        "uncapped_brood": {
+            "present": None,
+            "rating": None,
+        },
+        "brood_pattern": "",
+        "honey_stores": {
+            "present": None,
+            "rating": None,
+        },
+        "pollen_stores": {
+            "present": None,
+            "rating": None,
+        },
+        "queen_cells": {
+            "present": None,
+            "rating": None,
+        },
+        "additional_observations": [],
+        "reminders": [],
+        "actions": [],
+    }
+
+
 def require_api_key(req):
     if not AI_API_KEY:
         return
@@ -175,6 +224,7 @@ def require_api_key(req):
     if auth != expected:
         from flask import abort
         abort(401, description="Unauthorized")
+
 
 def transcribe_file(audio_path: str):
     segments, info = whisper.transcribe(
@@ -273,19 +323,38 @@ def recommend_from_transcript(transcript: str):
             }
         ],
         "stream": False,
-        "format": SCHEMA
+        "format": SCHEMA,
+        "options": {
+            "temperature": 0,
+            "num_predict": 700,
+        }
     }
 
-    response = requests.post(OLLAMA_URL, json=payload, timeout=600)
+    last_error = None
 
-    if not response.ok:
-        app.logger.error("Ollama error %s: %s", response.status_code, response.text)
-        response.raise_for_status()
+    for attempt in range(2):
+        try:
+            response = requests.post(OLLAMA_URL, json=payload, timeout=600)
 
-    data = response.json()
+            if not response.ok:
+                app.logger.error(
+                    "Ollama error %s: %s",
+                    response.status_code,
+                    response.text,
+                )
+                response.raise_for_status()
 
-    content = data.get("message", {}).get("content", "{}")
-    return json.loads(content)
+            data = response.json()
+            content = data.get("message", {}).get("content", "{}")
+            return json.loads(content)
+
+        except Exception as exc:
+            last_error = exc
+            app.logger.error("Ollama attempt %s failed: %s", attempt + 1, exc)
+            if attempt == 0:
+                time.sleep(2)
+
+    raise last_error
 
 
 def save_outputs(base_name: str, transcription: dict, recommendation: dict):
@@ -309,21 +378,69 @@ def save_outputs(base_name: str, transcription: dict, recommendation: dict):
         "recommendation_json": str(result_json_path),
     }
 
+def empty_recommendation():
+    return {
+        "hive_name": "",
+        "weather": {
+            "temperature_c": None,
+            "condition": ""
+        },
+        "queen_seen": None,
+        "hive_strength": {
+            "condition": None,
+            "rating": None
+        },
+        "capped_brood": {
+            "present": None,
+            "rating": None
+        },
+        "uncapped_brood": {
+            "present": None,
+            "rating": None
+        },
+        "brood_pattern": "",
+        "honey_stores": {
+            "present": None,
+            "rating": None
+        },
+        "pollen_stores": {
+            "present": None,
+            "rating": None
+        },
+        "queen_cells": {
+            "present": None,
+            "rating": None
+        },
+        "additional_observations": [],
+        "reminders": [],
+        "actions": []
+    }
 
 def process_audio_file(audio_path: str):
     audio = pathlib.Path(audio_path)
     base_name = audio.stem
 
     transcription = transcribe_file(str(audio))
-    recommendation = recommend_from_transcript(transcription["text"])
+
+    analysis_error = None
+    try:
+        trimmed_transcript = truncate_transcript(transcription["text"])
+        recommendation = recommend_from_transcript(trimmed_transcript)
+    except Exception as exc:
+        analysis_error = str(exc)
+        app.logger.exception("Recommendation generation failed")
+        recommendation = empty_recommendation()
+
     files = save_outputs(base_name, transcription, recommendation)
 
     return {
         "audio_file": str(audio),
         "transcription": transcription,
         "recommendation": recommendation,
+        "analysis_error": analysis_error,
         "files": files,
     }
+
 
 @app.post("/process-upload")
 def process_upload():
@@ -350,6 +467,7 @@ def process_upload():
             "status": "completed",
             "transcript": result["transcription"],
             "inspectionDraft": result["recommendation"],
+            "analysisError": result["analysis_error"],
             "files": result["files"],
         })
     finally:
@@ -357,6 +475,7 @@ def process_upload():
             os.unlink(temp_path)
         except OSError:
             pass
+
 
 @app.get("/health")
 def health():
@@ -381,7 +500,8 @@ def transcribe_endpoint():
 def recommend_endpoint():
     data = request.get_json(force=True)
     transcript = data["transcript"]
-    result = recommend_from_transcript(transcript)
+    trimmed_transcript = truncate_transcript(transcript)
+    result = recommend_from_transcript(trimmed_transcript)
     return jsonify(result)
 
 
@@ -405,6 +525,7 @@ def process_incoming():
                     "file": item.name,
                     "status": "ok",
                     "output": result["files"],
+                    "analysisError": result["analysis_error"],
                 })
             except Exception as exc:
                 processed.append({
