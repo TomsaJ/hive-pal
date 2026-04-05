@@ -714,7 +714,10 @@ export class InspectionsService {
     inspection: Record<string, unknown>,
     metrics: ObservationSchemaType,
   ): ScoreResult {
-    // If scores are stored in DB, use them; otherwise fall back to calculation
+    const calculated = calculateScores(metrics);
+
+    // If scores are stored in DB, use stored values where present,
+    // falling back to calculated values for any that are null
     const overallScore = inspection['overallScore'] as number | null | undefined;
     const populationScore = inspection['populationScore'] as number | null | undefined;
     const storesScore = inspection['storesScore'] as number | null | undefined;
@@ -724,15 +727,15 @@ export class InspectionsService {
 
     if (overallScore != null || populationScore != null || storesScore != null || queenScore != null) {
       return {
-        overallScore: overallScore ?? null,
-        populationScore: populationScore ?? null,
-        storesScore: storesScore ?? null,
-        queenScore: queenScore ?? null,
-        warnings: scoreWarnings ? JSON.parse(scoreWarnings) : [],
-        confidence: scoreConfidence ?? 0,
+        overallScore: overallScore ?? calculated.overallScore,
+        populationScore: populationScore ?? calculated.populationScore,
+        storesScore: storesScore ?? calculated.storesScore,
+        queenScore: queenScore ?? calculated.queenScore,
+        warnings: scoreWarnings ? JSON.parse(scoreWarnings) : calculated.warnings,
+        confidence: scoreConfidence ?? calculated.confidence,
       };
     }
-    return calculateScores(metrics);
+    return calculated;
   }
 
   mapObservationsToDto(observations: Observation[]): ObservationSchemaType {

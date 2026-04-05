@@ -354,7 +354,8 @@ export class HiveService {
     const metrics = this.inspectionService.mapObservationsToDto(
       latestCompletedInspection?.observations ?? [],
     );
-    // Use stored scores if available, otherwise fall back to calculation
+    // Always calculate from observations, then overlay any stored overrides
+    const calculated = calculateScores(metrics);
     const insp = latestCompletedInspection as Record<string, unknown> | null;
     const storedOverall = insp?.['overallScore'] as number | null | undefined;
     const storedPopulation = insp?.['populationScore'] as number | null | undefined;
@@ -366,14 +367,14 @@ export class HiveService {
     const score =
       storedOverall != null || storedPopulation != null || storedStores != null || storedQueen != null
         ? {
-            overallScore: storedOverall ?? null,
-            populationScore: storedPopulation ?? null,
-            storesScore: storedStores ?? null,
-            queenScore: storedQueen ?? null,
-            warnings: storedWarnings ? JSON.parse(storedWarnings) : [],
-            confidence: storedConfidence ?? 0,
+            overallScore: storedOverall ?? calculated.overallScore,
+            populationScore: storedPopulation ?? calculated.populationScore,
+            storesScore: storedStores ?? calculated.storesScore,
+            queenScore: storedQueen ?? calculated.queenScore,
+            warnings: storedWarnings ? JSON.parse(storedWarnings) : calculated.warnings,
+            confidence: storedConfidence ?? calculated.confidence,
           }
-        : calculateScores(metrics);
+        : calculated;
     const featurePhotoFields = await this.mapFeaturePhotoUrl(hive.featurePhoto);
 
     return {
