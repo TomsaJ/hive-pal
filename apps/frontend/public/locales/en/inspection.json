@@ -38,12 +38,16 @@
     "no": "No"
   },
   "scores": {
-    "title": "Inspection Scores",
+    "title": "Health Scores",
     "population": "Population",
     "stores": "Stores",
     "queen": "Queen",
     "overall": "Overall",
-    "warnings": "Warnings"
+    "warnings": "Warnings",
+    "override": "Override",
+    "resetToCalculated": "Reset to calculated",
+    "autoCalculated": "Auto-calculated",
+    "overridden": "Custom"
   },
   "observations": {
     "title": "Observations",

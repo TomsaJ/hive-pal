@@ -188,6 +188,14 @@ model Inspection {
   createdByUserId   String?
   createdByUser     User?            @relation("InspectionCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
+  // Persisted scores (calculated from observations, or user-overridden)
+  overallScore      Float?
+  populationScore   Float?
+  storesScore       Float?
+  queenScore        Float?
+  scoreWarnings     String?
+  scoreConfidence   Float?
+
   // Create index for quick lookup by hiveId - used in authorization checks
   @@index([hiveId])
   // Create index for date-based queries

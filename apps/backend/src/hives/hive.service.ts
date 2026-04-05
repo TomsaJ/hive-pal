@@ -28,6 +28,7 @@ import {
   AlertSeverity,
   AlertStatus,
   isVariantCompatible,
+  calculateScores,
 } from 'shared-schemas';
 
 @Injectable()
@@ -353,7 +354,26 @@ export class HiveService {
     const metrics = this.inspectionService.mapObservationsToDto(
       latestCompletedInspection?.observations ?? [],
     );
-    const score = this.metricsService.calculateOveralScore(metrics);
+    // Use stored scores if available, otherwise fall back to calculation
+    const insp = latestCompletedInspection as Record<string, unknown> | null;
+    const storedOverall = insp?.['overallScore'] as number | null | undefined;
+    const storedPopulation = insp?.['populationScore'] as number | null | undefined;
+    const storedStores = insp?.['storesScore'] as number | null | undefined;
+    const storedQueen = insp?.['queenScore'] as number | null | undefined;
+    const storedWarnings = insp?.['scoreWarnings'] as string | null | undefined;
+    const storedConfidence = insp?.['scoreConfidence'] as number | null | undefined;
+
+    const score =
+      storedOverall != null || storedPopulation != null || storedStores != null || storedQueen != null
+        ? {
+            overallScore: storedOverall ?? null,
+            populationScore: storedPopulation ?? null,
+            storesScore: storedStores ?? null,
+            queenScore: storedQueen ?? null,
+            warnings: storedWarnings ? JSON.parse(storedWarnings) : [],
+            confidence: storedConfidence ?? 0,
+          }
+        : calculateScores(metrics);
     const featurePhotoFields = await this.mapFeaturePhotoUrl(hive.featurePhoto);
 
     return {

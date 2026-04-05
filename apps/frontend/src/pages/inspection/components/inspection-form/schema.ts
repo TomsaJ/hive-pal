@@ -70,9 +70,18 @@ export const actionSchema = z.discriminatedUnion('type', [
   otherActionSchema,
 ]);
 
+// Score override schema for the form
+export const scoreFormSchema = z.object({
+  overallScore: z.number().min(0).max(10).nullable().optional(),
+  populationScore: z.number().min(0).max(10).nullable().optional(),
+  storesScore: z.number().min(0).max(10).nullable().optional(),
+  queenScore: z.number().min(0).max(10).nullable().optional(),
+});
+
 // Final inspection schema
 export const inspectionSchema = inspectionFormSchema.extend({
   actions: z.array(actionSchema).optional(),
+  score: scoreFormSchema.optional(),
 });
 
 export type ObservationFormData = z.infer<typeof observationSchema>;
