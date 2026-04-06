@@ -165,15 +165,10 @@ export const HiveListPage = () => {
                     {hive.notes ?? t('hive:fields.noNotes')}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex items-center pointer-events-none"
-                      tabIndex={-1}
-                    >
-                      {t('hive:actions.details')}{' '}
+                    <span className="inline-flex items-center text-sm text-muted-foreground">
+                      {t('hive:actions.details')}
                       <ChevronRight className="ml-1 h-4 w-4" />
-                    </Button>
+                    </span>
                   </TableCell>
                 </TableRow>
               ))}
