@@ -236,17 +236,38 @@ export const useUpsertInspection = (inspectionId?: string) => {
                 quantity: action.frames,
               },
             };
+          case 'MAINTENANCE':
+            return {
+              type: ActionType.MAINTENANCE,
+              notes: action.notes,
+              details: {
+                type: ActionType.MAINTENANCE,
+                component: action.component,
+                status: action.status,
+              },
+            };
           default:
             return null;
         }
       })
       .filter((a): a is CreateAction => Boolean(a));
 
+    // Build score override if custom scores were set
+    const scoreOverride = data.score
+      ? {
+          overallScore: data.score.overallScore ?? null,
+          populationScore: data.score.populationScore ?? null,
+          storesScore: data.score.storesScore ?? null,
+          queenScore: data.score.queenScore ?? null,
+        }
+      : undefined;
+
     const formattedData = {
       ...data,
       date: data.date.toISOString(),
       status: status || data.status,
       actions: transformedActions,
+      score: scoreOverride,
     };
 
     if (!inspectionId) {

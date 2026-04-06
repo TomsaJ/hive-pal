@@ -44,6 +44,7 @@ import { mapWeatherConditionToForm } from '@/utils/weather-mapping';
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { AudioSection } from './audio-section';
+import { ScorePreviewSection } from './score-preview';
 
 interface PendingRecording {
   id: string;
@@ -291,6 +292,8 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
 
               <hr className={'border-t border-border'} />
               <ObservationsSection />
+              <hr className={'border-t border-border'} />
+              <ScorePreviewSection />
               <hr className={'border-t border-border'} />
               <ActionsSection />
               <hr className={'border-t border-border'} />

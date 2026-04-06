@@ -38,12 +38,16 @@
     "no": "No"
   },
   "scores": {
-    "title": "Inspection Scores",
+    "title": "Health Scores",
     "population": "Population",
     "stores": "Stores",
     "queen": "Queen",
     "overall": "Overall",
-    "warnings": "Warnings"
+    "warnings": "Warnings",
+    "override": "Override",
+    "resetToCalculated": "Reset to calculated",
+    "autoCalculated": "Auto-calculated",
+    "overridden": "Custom"
   },
   "observations": {
     "title": "Observations",
@@ -289,6 +293,19 @@
         "remove": "Remove",
         "saveNote": "Save Note",
         "edit": "Edit"
+      },
+      "maintenance": "Maintenance",
+      "maintenance_section": {
+        "title": "Maintenance",
+        "component": "Component",
+        "box": "Box",
+        "bottomBoard": "Bottom Board",
+        "cover": "Cover",
+        "status": "Status",
+        "cleaned": "Cleaned",
+        "replaced": "Replaced",
+        "notesOptional": "Notes (optional)",
+        "notesPlaceholder": "Additional notes about the maintenance..."
       }
     },
     "audio": {

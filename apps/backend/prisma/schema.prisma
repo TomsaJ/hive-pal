@@ -188,6 +188,14 @@ model Inspection {
   createdByUserId   String?
   createdByUser     User?            @relation("InspectionCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
+  // Persisted scores (calculated from observations, or user-overridden)
+  overallScore      Float?
+  populationScore   Float?
+  storesScore       Float?
+  queenScore        Float?
+  scoreWarnings     String?
+  scoreConfidence   Float?
+
   // Create index for quick lookup by hiveId - used in authorization checks
   @@index([hiveId])
   // Create index for date-based queries
@@ -271,6 +279,7 @@ model Action {
   frameAction     FrameAction?
   harvestAction   HarvestAction?
   boxConfigurationAction BoxConfigurationAction?
+  maintenanceAction MaintenanceAction?
   createdByUserId String?
   createdByUser   User?      @relation("ActionCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
@@ -330,6 +339,14 @@ model BoxConfigurationAction {
   framesRemoved Int    @default(0) // Total number of frames removed
   totalBoxes    Int    // Total boxes after the change
   totalFrames   Int    // Total frames after the change
+}
+
+model MaintenanceAction {
+  id        String @id @default(uuid())
+  actionId  String @unique
+  action    Action @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  component String // BOX, BOTTOM_BOARD, COVER
+  status    String // CLEANED, REPLACED
 }
 
 // Harvest tracking
@@ -409,6 +426,7 @@ enum ActionType {
   FRAME
   HARVEST
   BOX_CONFIGURATION
+  MAINTENANCE
   NOTE
   OTHER
 }
