@@ -22,7 +22,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useHives } from '@/api/hooks';
 
 export function NavHives() {
@@ -42,13 +42,14 @@ export function NavHives() {
         {hives?.slice(0, 5)?.map(item => (
           <SidebarMenuItem key={item.id}>
             <SidebarMenuButton asChild>
-              <button
-                onClick={() => handleNav(`/hives/${item.id}`)}
-                className="flex items-center w-full cursor-pointer"
+              <Link
+                to={`/hives/${item.id}`}
+                onClick={() => { if (isMobile) setOpenMobile(false); }}
+                className="flex items-center"
               >
                 <HomeIcon />
                 <span>{item.name}</span>
-              </button>
+              </Link>
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
