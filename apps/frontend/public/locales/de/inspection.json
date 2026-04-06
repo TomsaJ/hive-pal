@@ -107,7 +107,9 @@
     "doInspection": "Inspektion durchführen",
     "reschedule": "Neu planen",
     "cancel": "Abbrechen",
-    "completeInspection": "Inspektion abschließen"
+    "completeInspection": "Inspektion abschließen",
+    "print": "Drucken",
+    "share": "Teilen"
   },
   "sidebar": {
     "actions": "Aktionen",
