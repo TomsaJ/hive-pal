@@ -102,6 +102,9 @@ export const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
   };
 
   const handleDateSelect = (date: Date) => {
+    if (!isAllDay && selectedDate) {
+      date.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0, 0);
+    }
     setSelectedDate(date);
   };
 

@@ -174,7 +174,9 @@ export const ScheduleInspectionPage = () => {
             createInspection(
               {
                 hiveId,
-                date: date.toISOString(),
+                date: isAllDay
+                  ? new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())).toISOString()
+                  : date.toISOString(),
                 isAllDay,
                 notes,
                 status: InspectionStatus.SCHEDULED,
