@@ -43,7 +43,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { ActionType, InspectionStatus } from 'shared-schemas';
 import { mapWeatherConditionToForm } from '@/utils/weather-mapping';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { format } from 'date-fns';
 import { AudioSection } from './audio-section';
 import { ScorePreviewSection } from './score-preview';
@@ -81,6 +81,7 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
   const [pendingRecordings, setPendingRecordings] = useState<
     PendingRecording[]
   >([]);
+  const savedTimeRef = useRef<{ hours: number; minutes: number } | null>(null);
 
   // Use our new custom hooks
   const { data: inspection } = useInspection(inspectionId as string, {
@@ -288,8 +289,24 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
                       onCheckedChange={checked => {
                         form.setValue('isAllDay', checked);
                         if (checked && field.value) {
+                          savedTimeRef.current = {
+                            hours: field.value.getHours(),
+                            minutes: field.value.getMinutes(),
+                          };
                           const d = new Date(field.value);
                           d.setHours(0, 0, 0, 0);
+                          field.onChange(d);
+                        } else if (!checked && field.value) {
+                          const d = new Date(field.value);
+                          if (savedTimeRef.current) {
+                            d.setHours(
+                              savedTimeRef.current.hours,
+                              savedTimeRef.current.minutes,
+                              0,
+                              0,
+                            );
+                            savedTimeRef.current = null;
+                          }
                           field.onChange(d);
                         }
                       }}

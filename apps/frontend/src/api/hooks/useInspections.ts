@@ -264,7 +264,9 @@ export const useUpsertInspection = (inspectionId?: string) => {
 
     const formattedData = {
       ...data,
-      date: data.date.toISOString(),
+      date: data.isAllDay
+        ? new Date(Date.UTC(data.date.getFullYear(), data.date.getMonth(), data.date.getDate())).toISOString()
+        : data.date.toISOString(),
       status: status || data.status,
       actions: transformedActions,
       score: scoreOverride,
