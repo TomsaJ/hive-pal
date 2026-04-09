@@ -8,8 +8,17 @@ import { IconJarLogoIcon } from '@radix-ui/react-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { InspectionFormData } from './schema';
+import { AiBadge } from './ai-badge';
 
-type ScoreKey = 'overallScore' | 'populationScore' | 'storesScore' | 'queenScore';
+type ScoreKey =
+  | 'overallScore'
+  | 'populationScore'
+  | 'storesScore'
+  | 'queenScore';
+
+type ScorePreviewSectionProps = {
+  isAiSuggested?: (field: keyof InspectionFormData) => boolean;
+};
 
 const getScoreColor = (value: number | null | undefined) => {
   if (value === null || value === undefined) return 'text-muted-foreground';
@@ -29,27 +38,33 @@ const ScoreItem: React.FC<{
   const { t } = useTranslation('inspection');
   const [editing, setEditing] = useState(false);
   const [hoveredValue, setHoveredValue] = useState<number | null>(null);
-  const isOverridden = overrideValue !== undefined && overrideValue !== null && overrideValue !== calculatedValue;
+
+  const isOverridden =
+    overrideValue !== undefined &&
+    overrideValue !== null &&
+    overrideValue !== calculatedValue;
+
   const displayValue = isOverridden ? overrideValue : calculatedValue;
   const ratingValue = overrideValue ?? calculatedValue;
 
   return (
-    <div className="rounded-md border bg-card p-2 space-y-2">
-      {/* Header row: icon + label + score + actions */}
+    <div className="space-y-2 rounded-md border bg-card p-2">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
           {icon}
-          <span className="text-sm text-muted-foreground truncate">{label}</span>
+          <span className="truncate text-sm text-muted-foreground">{label}</span>
         </div>
+
         <div className="flex items-center gap-1.5">
           <span className={`text-lg font-bold ${getScoreColor(displayValue)}`}>
             {displayValue?.toFixed(1) ?? '—'}
           </span>
           <span className="text-xs text-muted-foreground">/10</span>
+
           {isOverridden && (
             <button
               type="button"
-              className="text-xs text-muted-foreground hover:text-foreground ml-1"
+              className="ml-1 text-xs text-muted-foreground hover:text-foreground"
               onClick={e => {
                 e.preventDefault();
                 onClear();
@@ -60,9 +75,14 @@ const ScoreItem: React.FC<{
               <RotateCcw className="h-3 w-3" />
             </button>
           )}
+
           <button
             type="button"
-            className={`ml-0.5 ${editing ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`ml-0.5 ${
+              editing
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
             onClick={e => {
               e.preventDefault();
               setEditing(!editing);
@@ -73,13 +93,11 @@ const ScoreItem: React.FC<{
         </div>
       </div>
 
-      {/* Rating bar + input row (shown when editing) */}
       {editing && (
         <div className="flex items-center">
-          {/* Zero value button */}
           <button
             type="button"
-            className={`w-8 h-8 rounded-lg flex items-center justify-center mr-2 ${
+            className={`mr-2 flex h-8 w-8 items-center justify-center rounded-lg ${
               ratingValue === 0
                 ? 'bg-gray-600 text-white dark:bg-gray-300 dark:text-gray-900'
                 : 'bg-gray-100 dark:bg-gray-800'
@@ -93,10 +111,10 @@ const ScoreItem: React.FC<{
             0
           </button>
 
-          {/* Rating buttons */}
-          <div className="grow grid grid-cols-10 gap-1 h-8">
+          <div className="grid h-8 grow grid-cols-10 gap-1">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(fullValue => {
               let color = 'bg-gray-200 dark:bg-gray-700';
+
               if (hoveredValue != null && hoveredValue >= fullValue) {
                 color = 'bg-amber-200 dark:bg-amber-800';
               } else if (ratingValue != null && ratingValue >= fullValue) {
@@ -107,7 +125,11 @@ const ScoreItem: React.FC<{
                 <button
                   key={fullValue}
                   type="button"
-                  className={`rounded w-full duration-300 transition-colors text-xs ${color} ${hoveredValue === fullValue ? 'text-gray-700 dark:text-gray-300' : 'text-transparent'}`}
+                  className={`w-full rounded text-xs transition-colors duration-300 ${color} ${
+                    hoveredValue === fullValue
+                      ? 'text-gray-700 dark:text-gray-300'
+                      : 'text-transparent'
+                  }`}
                   onMouseEnter={() => setHoveredValue(fullValue)}
                   onMouseLeave={() => setHoveredValue(null)}
                   onClick={e => {
@@ -123,22 +145,21 @@ const ScoreItem: React.FC<{
             })}
           </div>
 
-          {/* Numeric input */}
           <Input
             type="number"
             min={0}
             max={10}
             step={0.1}
-            className="ml-2 w-16 h-8 text-sm text-center"
+            className="ml-2 h-8 w-16 text-center text-sm"
             value={ratingValue ?? ''}
             onChange={e => {
-              const val = e.target.value === '' ? null : parseFloat(e.target.value);
+              const val =
+                e.target.value === '' ? null : parseFloat(e.target.value);
               if (val !== null && (val < 0 || val > 10)) return;
               onOverride(val !== null ? Math.round(val * 100) / 100 : null);
             }}
           />
 
-          {/* Clear button */}
           <Button
             variant="ghost"
             type="button"
@@ -158,7 +179,9 @@ const ScoreItem: React.FC<{
   );
 };
 
-export const ScorePreviewSection: React.FC = () => {
+export const ScorePreviewSection: React.FC<ScorePreviewSectionProps> = ({
+  isAiSuggested,
+}) => {
   const { t } = useTranslation('inspection');
   const { setValue, control } = useFormContext<InspectionFormData>();
 
@@ -176,6 +199,7 @@ export const ScorePreviewSection: React.FC = () => {
         confidence: 0,
       };
     }
+
     return calculateScores(observations);
   }, [observations]);
 
@@ -192,11 +216,15 @@ export const ScorePreviewSection: React.FC = () => {
   if (!hasAnyScore) return null;
 
   const hasOverrides =
-    scoreForm &&
-    ((scoreForm.overallScore != null && scoreForm.overallScore !== calculated.overallScore) ||
-      (scoreForm.populationScore != null && scoreForm.populationScore !== calculated.populationScore) ||
-      (scoreForm.storesScore != null && scoreForm.storesScore !== calculated.storesScore) ||
-      (scoreForm.queenScore != null && scoreForm.queenScore !== calculated.queenScore));
+    !!scoreForm &&
+    ((scoreForm.overallScore != null &&
+      scoreForm.overallScore !== calculated.overallScore) ||
+      (scoreForm.populationScore != null &&
+        scoreForm.populationScore !== calculated.populationScore) ||
+      (scoreForm.storesScore != null &&
+        scoreForm.storesScore !== calculated.storesScore) ||
+      (scoreForm.queenScore != null &&
+        scoreForm.queenScore !== calculated.queenScore));
 
   const setScoreField = (key: ScoreKey, value: number | null) => {
     setValue(`score.${key}`, value, { shouldDirty: true });
@@ -211,16 +239,36 @@ export const ScorePreviewSection: React.FC = () => {
   };
 
   const scores: { key: ScoreKey; label: string; icon: React.ReactNode }[] = [
-    { key: 'overallScore', label: t('scores.overall'), icon: <BarChart className="h-4 w-4 text-amber-500" /> },
-    { key: 'populationScore', label: t('scores.population'), icon: <BeeIcon className="h-4 w-4 text-blue-500" /> },
-    { key: 'storesScore', label: t('scores.stores'), icon: <IconJarLogoIcon className="h-4 w-4 text-purple-500" /> },
-    { key: 'queenScore', label: t('scores.queen'), icon: <CrownIcon className="h-4 w-4 text-green-500" /> },
+    {
+      key: 'overallScore',
+      label: t('scores.overall'),
+      icon: <BarChart className="h-4 w-4 text-amber-500" />,
+    },
+    {
+      key: 'populationScore',
+      label: t('scores.population'),
+      icon: <BeeIcon className="h-4 w-4 text-blue-500" />,
+    },
+    {
+      key: 'storesScore',
+      label: t('scores.stores'),
+      icon: <IconJarLogoIcon className="h-4 w-4 text-purple-500" />,
+    },
+    {
+      key: 'queenScore',
+      label: t('scores.queen'),
+      icon: <CrownIcon className="h-4 w-4 text-green-500" />,
+    },
   ];
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">{t('scores.title')}</h3>
+        <h3 className="text-lg font-medium">
+          {t('scores.title')}
+          {isAiSuggested?.('score') && <AiBadge />}
+        </h3>
+
         {hasOverrides && (
           <Button
             type="button"
@@ -232,12 +280,13 @@ export const ScorePreviewSection: React.FC = () => {
             }}
             className="text-xs"
           >
-            <RotateCcw className="h-3 w-3 mr-1" />
+            <RotateCcw className="mr-1 h-3 w-3" />
             {t('scores.resetToCalculated')}
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {scores.map(({ key, label, icon }) => (
           <ScoreItem
             key={key}

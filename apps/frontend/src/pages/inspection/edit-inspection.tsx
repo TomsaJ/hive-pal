@@ -18,6 +18,7 @@ export const EditInspectionPage = () => {
   const { data: inspection } = useInspection(id || '', {
     enabled: !!id && fromScheduled,
   });
+  const aiSuggestedFields = location.state?.aiSuggestedFields;
 
   return (
     <>
@@ -36,7 +37,11 @@ export const EditInspectionPage = () => {
         </Alert>
       )}
 
-      <InspectionForm inspectionId={id} aiDraft={aiDraft} />
+      <InspectionForm
+        inspectionId={id}
+        aiDraft={aiDraft}
+        aiSuggestedFields={aiSuggestedFields}
+      />
     </>
   );
 };

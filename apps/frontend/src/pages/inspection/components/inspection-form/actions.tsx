@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import { TEST_SELECTORS } from '@/utils/test-selectors.ts';
 import { useFormContext } from 'react-hook-form';
 import { ActionData, InspectionFormData } from './schema.ts';
+import { AiBadge } from './ai-badge';
 
 const actionTypes = [
   { id: 'FEEDING', label: 'Feeding', Icon: Droplet },
@@ -54,25 +55,27 @@ export type ActionType =
 
 interface ActionsSectionProps {
   editMode?: boolean;
+  isAiSuggested?: (field: keyof InspectionFormData) => boolean;
 }
 
 export const ActionsSection: React.FC<ActionsSectionProps> = ({
   editMode = false,
+  isAiSuggested,
 }) => {
   const { t } = useTranslation('inspection');
   const { setValue, getValues, watch, formState } =
     useFormContext<InspectionFormData>();
 
   const actionLabels: Record<string, string> = {
-    'FEEDING': t('inspection:form.actions.feeding'),
-    'TREATMENT': t('inspection:form.actions.treatment'),
-    'FRAME': t('inspection:form.actions.frames'),
-    'MAINTENANCE': t('inspection:form.actions.maintenance'),
-    'NOTE': t('inspection:form.actions.note'),
+    FEEDING: t('inspection:form.actions.feeding'),
+    TREATMENT: t('inspection:form.actions.treatment'),
+    FRAME: t('inspection:form.actions.frames'),
+    MAINTENANCE: t('inspection:form.actions.maintenance'),
+    NOTE: t('inspection:form.actions.note'),
   };
+
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
 
-  // Watch for changes to the actions array in the form
   const formActions = watch('actions') || [];
 
   const handleSave = useCallback(
@@ -170,14 +173,29 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
             onRemove={handleRemove}
           />
         );
+      case 'OTHER':
+        return (
+          <NoteView
+            key="other"
+            onSave={handleSave}
+            action={{ type: 'NOTE', notes: action.notes }}
+            onRemove={() => handleRemove('OTHER')}
+          />
+        );
+      default:
+        return null;
     }
   };
 
   return (
     <div>
-      <h3 className={'text-lg my-4 font-medium'}>
-        {editMode ? t('inspection:form.actions.titleSingular') : t('inspection:form.actions.title')}
+      <h3 className="my-4 text-lg font-medium">
+        {editMode
+          ? t('inspection:form.actions.titleSingular')
+          : t('inspection:form.actions.title')}
+        {isAiSuggested?.('actions') && <AiBadge />}
       </h3>
+
       {!editMode && (
         <div
           data-test={TEST_SELECTORS.ACTION_BUTTONS}
@@ -185,9 +203,11 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
         >
           {actionTypes.map(({ id, label, Icon }) => {
             if (formActions.some(a => a.type === id)) return null;
+
             return (
               <Button
-                size={'sm'}
+                size="sm"
+                type="button"
                 onClick={e => {
                   e.preventDefault();
                   setSelectedAction(id);
@@ -203,9 +223,11 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
       )}
 
       {renderActionForm && <div>{renderActionForm}</div>}
+
       {formState.errors.actions && (
         <div className="text-red-500">{formState.errors.actions.message}</div>
       )}
+
       <div
         className="flex flex-col divide-y"
         data-test={TEST_SELECTORS.SELECTED_ACTIONS}

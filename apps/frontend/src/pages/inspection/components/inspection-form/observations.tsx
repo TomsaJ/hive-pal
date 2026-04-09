@@ -12,11 +12,13 @@ import {
 import { X } from 'lucide-react';
 import { InspectionFormData } from './schema';
 import { Checkbox } from '@/components/ui/checkbox.tsx';
+import { AiBadge } from './ai-badge';
 
 type ObservationItemProps<T> = {
   name: T;
   label: string;
 };
+
 const ObservationItem = <TName extends FieldPath<InspectionFormData>>({
   name,
   label,
@@ -24,26 +26,27 @@ const ObservationItem = <TName extends FieldPath<InspectionFormData>>({
   const { t } = useTranslation('inspection');
   const { control } = useFormContext<InspectionFormData>();
   const [hoveredValue, setHoveredValue] = React.useState<number | null>(null);
+
   return (
     <FormField
       control={control}
       name={name}
       render={({ field }) => {
         const currentValue = field.value as number | undefined;
+
         return (
           <FormItem>
             <FormControl>
-              <div className="flex md:items-center mb-4 flex-col md:flex-row gap-2 md:gap-2">
-                <div className="w-32 min-w-32 mr-4">
+              <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:gap-2">
+                <div className="mr-4 min-w-32 w-32">
                   <label className="text-sm font-medium">{label}</label>
                 </div>
 
                 <div className="flex-1">
-                  {/* Rating bar with half points */}
-                  <div className="flex items-center mb-2">
-                    {/* Zero value button */}
+                  <div className="mb-2 flex items-center">
                     <button
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center mr-2 ${
+                      type="button"
+                      className={`mr-2 flex h-8 w-8 items-center justify-center rounded-lg ${
                         currentValue === 0
                           ? 'bg-gray-600 text-white dark:bg-gray-300 dark:text-gray-900'
                           : 'bg-gray-100 dark:bg-gray-800'
@@ -58,10 +61,10 @@ const ObservationItem = <TName extends FieldPath<InspectionFormData>>({
                       0
                     </button>
 
-                    {/* Half point rating buttons */}
-                    <div className="grow grid grid-cols-10 gap-1 h-8">
+                    <div className="grid h-8 grow grid-cols-10 gap-1">
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(fullValue => {
                         let color = 'bg-gray-200 dark:bg-gray-700';
+
                         if (hoveredValue != null && hoveredValue >= fullValue) {
                           color = 'bg-amber-200 dark:bg-amber-800';
                         } else if (
@@ -73,7 +76,13 @@ const ObservationItem = <TName extends FieldPath<InspectionFormData>>({
 
                         return (
                           <button
-                            className={`rounded w-full duration-300 transition-colors text-xs ${color} ${hoveredValue === fullValue ? 'text-gray-700 dark:text-gray-300' : 'text-transparent'}`}
+                            key={fullValue}
+                            type="button"
+                            className={`w-full rounded text-xs transition-colors duration-300 ${color} ${
+                              hoveredValue === fullValue
+                                ? 'text-gray-700 dark:text-gray-300'
+                                : 'text-transparent'
+                            }`}
                             onMouseEnter={() => setHoveredValue(fullValue)}
                             onMouseLeave={() => setHoveredValue(null)}
                             onClick={e => {
@@ -92,16 +101,16 @@ const ObservationItem = <TName extends FieldPath<InspectionFormData>>({
                       })}
                     </div>
 
-                    {/* Value display */}
-                    <div className="ml-4 w-8 h-8 text-center">
-                      <span className="text-sm px-2 py-1 h-8 block bg-gray-100 dark:bg-gray-800 rounded">
+                    <div className="ml-4 h-8 w-8 text-center">
+                      <span className="block h-8 rounded bg-gray-100 px-2 py-1 text-sm dark:bg-gray-800">
                         {currentValue ?? '-'}
                       </span>
                     </div>
 
                     <Button
-                      variant={'ghost'}
-                      disabled={currentValue === null}
+                      variant="ghost"
+                      type="button"
+                      disabled={currentValue == null}
                       className="ml-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
                       onClick={e => {
                         e.preventDefault();
@@ -124,20 +133,30 @@ const ObservationItem = <TName extends FieldPath<InspectionFormData>>({
   );
 };
 
-export const ObservationsSection: React.FC = () => {
+type ObservationsSectionProps = {
+  isAiSuggested?: (field: keyof InspectionFormData) => boolean;
+};
+
+export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
+  isAiSuggested,
+}) => {
   const { t } = useTranslation('inspection');
   const { control } = useFormContext<InspectionFormData>();
   const queenCells = useWatch({ name: 'observations.queenCells', control });
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">{t('observations.title')}</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">
+          {t('observations.title')}
+          {isAiSuggested?.('observations') && <AiBadge />}
+        </h3>
       </div>
 
-      <div className={'grid md:grid-cols-3 grid-cols-2 space-2'}>
+      <div className="grid grid-cols-2 space-2 md:grid-cols-3">
         <FormField
           control={control}
-          name={`observations.queenSeen`}
+          name="observations.queenSeen"
           render={({ field }) => (
             <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow">
               <FormControl>
@@ -152,24 +171,20 @@ export const ObservationsSection: React.FC = () => {
           )}
         />
 
-        <div className="flex flex-col col-span-3 space-y-2 mt-5">
+        <div className="col-span-3 mt-5 flex flex-col space-y-2">
           <ObservationItem
-            key={'strength'}
-            name={'observations.strength'}
+            name="observations.strength"
             label={t('observations.strength')}
           />
           <ObservationItem
-            key={'cappedBrood'}
-            name={'observations.cappedBrood'}
+            name="observations.cappedBrood"
             label={t('observations.cappedBrood')}
           />
           <ObservationItem
-            key={'uncappedBrood'}
-            name={'observations.uncappedBrood'}
+            name="observations.uncappedBrood"
             label={t('observations.uncappedBrood')}
           />
 
-          {/* Brood Pattern Badges (Single Select) */}
           <div className="mt-4">
             <FormField
               control={control}
@@ -186,7 +201,6 @@ export const ObservationsSection: React.FC = () => {
                 ];
 
                 const selectPattern = (value: string) => {
-                  // If clicking the same value, deselect it
                   field.onChange(currentValue === value ? null : value);
                 };
 
@@ -195,14 +209,14 @@ export const ObservationsSection: React.FC = () => {
                     <FormLabel className="text-sm font-medium">
                       {t('observations.broodPattern')}
                     </FormLabel>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
                       {broodPatternOptions.map(option => (
                         <div
                           key={option}
-                          className={`cursor-pointer p-2 rounded-md border text-center text-sm transition-colors ${
+                          className={`cursor-pointer rounded-md border p-2 text-center text-sm transition-colors ${
                             currentValue === option
-                              ? 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300'
-                              : 'bg-gray-50 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700'
+                              ? 'border-green-300 bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-900/30 dark:text-green-300'
+                              : 'border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700'
                           }`}
                           onClick={() => selectPattern(option)}
                         >
@@ -218,26 +232,23 @@ export const ObservationsSection: React.FC = () => {
           </div>
 
           <ObservationItem
-            key={'honeyStores'}
-            name={'observations.honeyStores'}
+            name="observations.honeyStores"
             label={t('observations.honeyStores')}
           />
           <ObservationItem
-            key={'pollenStores'}
-            name={'observations.pollenStores'}
+            name="observations.pollenStores"
             label={t('observations.pollenStores')}
           />
-
           <ObservationItem
-            key={'queenCells'}
-            name={'observations.queenCells'}
+            name="observations.queenCells"
             label={t('observations.queenCells')}
           />
+
           {(queenCells ?? 0) > 0 && (
-            <div className={'grid grid-cols-2 space-x-2'}>
+            <div className="grid grid-cols-2 space-x-2">
               <FormField
                 control={control}
-                name={`observations.swarmCells`}
+                name="observations.swarmCells"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 shadow">
                     <FormControl>
@@ -253,7 +264,7 @@ export const ObservationsSection: React.FC = () => {
               />
               <FormField
                 control={control}
-                name={`observations.supersedureCells`}
+                name="observations.supersedureCells"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 shadow">
                     <FormControl>
@@ -270,9 +281,8 @@ export const ObservationsSection: React.FC = () => {
             </div>
           )}
 
-          {/* Additional Observations (Badges/Tags) */}
           <div className="mt-6">
-            <h4 className="text-md font-medium mb-3">
+            <h4 className="mb-3 text-md font-medium">
               {t('observations.additionalObservations')}
             </h4>
             <FormField
@@ -304,14 +314,14 @@ export const ObservationsSection: React.FC = () => {
 
                 return (
                   <FormItem>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
                       {availableOptions.map(option => (
                         <div
                           key={option}
-                          className={`cursor-pointer p-2 rounded-md border text-center text-sm transition-colors ${
+                          className={`cursor-pointer rounded-md border p-2 text-center text-sm transition-colors ${
                             currentValues.includes(option)
-                              ? 'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300'
-                              : 'bg-gray-50 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700'
+                              ? 'border-blue-300 bg-blue-100 text-blue-800 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                              : 'border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700'
                           }`}
                           onClick={() => toggleObservation(option)}
                         >
@@ -326,9 +336,8 @@ export const ObservationsSection: React.FC = () => {
             />
           </div>
 
-          {/* Reminder Observations */}
           <div className="mt-6">
-            <h4 className="text-md font-medium mb-3">
+            <h4 className="mb-3 text-md font-medium">
               {t('observations.reminderObservations')}
             </h4>
             <FormField
@@ -355,14 +364,14 @@ export const ObservationsSection: React.FC = () => {
 
                 return (
                   <FormItem>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
                       {availableOptions.map(option => (
                         <div
                           key={option}
-                          className={`cursor-pointer p-2 rounded-md border text-center text-sm transition-colors ${
+                          className={`cursor-pointer rounded-md border p-2 text-center text-sm transition-colors ${
                             currentValues.includes(option)
-                              ? 'bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300'
-                              : 'bg-gray-50 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700'
+                              ? 'border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                              : 'border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700'
                           }`}
                           onClick={() => toggleObservation(option)}
                         >

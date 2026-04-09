@@ -10,13 +10,13 @@ import { Cloud, CloudRain, CloudSun, Sun } from 'lucide-react';
 import { InspectionFormData } from '@/pages/inspection/components/inspection-form/schema.ts';
 import { useFormContext } from 'react-hook-form';
 import { TemperatureField } from '@/components/common';
+import { AiBadge } from './ai-badge';
 
 const weatherConditions = [
   {
     id: 'sunny',
     label: 'Sunny',
     icon: Sun,
-
     style: 'bg-background border-border hover:border-amber-600',
     styleActive: 'bg-amber-50 border-amber-400',
     iconStyle: 'text-amber-400',
@@ -27,7 +27,7 @@ const weatherConditions = [
     label: 'Partly cloudy',
     icon: CloudSun,
     style: 'bg-background border-border hover:border-gray-600',
-    styleActive: 'bg-blue-50  border-gray-600',
+    styleActive: 'bg-blue-50 border-gray-600',
     iconStyle: 'text-amber-800',
     iconStyleActive: 'text-amber-400',
   },
@@ -51,28 +51,38 @@ const weatherConditions = [
   },
 ];
 
-export const WeatherSection = () => {
+type WeatherSectionProps = {
+  isAiSuggested?: (field: keyof InspectionFormData) => boolean;
+};
+
+export const WeatherSection = ({ isAiSuggested }: WeatherSectionProps) => {
   const { t } = useTranslation('inspection');
   const form = useFormContext<InspectionFormData>();
 
   const weatherLabels: Record<string, string> = {
-    'sunny': t('inspection:form.weather.sunny'),
+    sunny: t('inspection:form.weather.sunny'),
     'partly-cloudy': t('inspection:form.weather.partlyCloudy'),
-    'cloudy': t('inspection:form.weather.cloudy'),
-    'rainy': t('inspection:form.weather.rainy'),
+    cloudy: t('inspection:form.weather.cloudy'),
+    rainy: t('inspection:form.weather.rainy'),
   };
 
   return (
     <div>
       <h3 className="text-lg font-medium">{t('inspection:form.weather.title')}</h3>
-      <p className="text-sm text-gray-400">{t('inspection:form.weather.description')}</p>
-      <div className={'space-y-4 py-4 grid grid-cols-1'}>
+      <p className="text-sm text-gray-400">
+        {t('inspection:form.weather.description')}
+      </p>
+
+      <div className="grid grid-cols-1 space-y-4 py-4">
         <FormField
           control={form.control}
           name="temperature"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('inspection:form.weather.temperature')}</FormLabel>
+              <FormLabel>
+                {t('inspection:form.weather.temperature')}
+                {isAiSuggested?.('temperature') && <AiBadge />}
+              </FormLabel>
               <TemperatureField
                 onChange={field.onChange}
                 min={0}
@@ -92,28 +102,35 @@ export const WeatherSection = () => {
           rules={{ required: 'Please select a weather condition' }}
           render={({ field }) => (
             <FormItem className="space-y-2">
-              <FormLabel>{t('inspection:form.weather.condition')}</FormLabel>
+              <FormLabel>
+                {t('inspection:form.weather.condition')}
+                {isAiSuggested?.('weatherConditions') && <AiBadge />}
+              </FormLabel>
               <FormControl>
-                <div className="flex flex-wrap gap-3 justify-start">
+                <div className="flex flex-wrap justify-start gap-3">
                   {weatherConditions.map(condition => {
                     const Icon = condition.icon;
                     const isSelected = field.value === condition.id;
 
                     return (
                       <button
-                        type={'button'}
+                        type="button"
                         key={condition.id}
                         onClick={() => field.onChange(condition.id)}
                         onKeyDown={() => {}}
                         className={`
-                              flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer transition-all
-                              ${isSelected ? `${condition.styleActive}` : `${condition.style}`}
-                            `}
+                          flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 transition-all
+                          ${isSelected ? condition.styleActive : condition.style}
+                        `}
                       >
                         <Icon
-                          className={`h-5 w-5 ${isSelected ? condition.iconStyleActive : condition.iconStyle}`}
+                          className={`h-5 w-5 ${
+                            isSelected
+                              ? condition.iconStyleActive
+                              : condition.iconStyle
+                          }`}
                         />
-                        <span className={`text-sm font-medium`}>
+                        <span className="text-sm font-medium">
                           {weatherLabels[condition.id] || condition.label}
                         </span>
                       </button>

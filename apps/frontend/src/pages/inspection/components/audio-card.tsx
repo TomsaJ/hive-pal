@@ -95,6 +95,7 @@ function RecordingRow({
     navigate(`/inspections/${inspectionId}/edit?from=ai`, {
       state: {
         aiDraft: mapped.values,
+        aiSuggestedFields: mapped.suggestedFields,
         aiSourceAudioId: recording.id,
       },
     });
