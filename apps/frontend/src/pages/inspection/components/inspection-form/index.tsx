@@ -62,7 +62,6 @@ type InspectionFormProps = {
   submitButtonText?: React.ReactNode;
   showCancelButton?: boolean;
   aiDraft?: Partial<InspectionFormData>;
-  aiSuggestedFields?: string[];
 };
 
 export const InspectionForm: React.FC<InspectionFormProps> = ({
@@ -74,7 +73,6 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
   submitButtonText,
   showCancelButton = false,
   aiDraft,
-  aiSuggestedFields = [],
 }) => {
   const { t } = useTranslation('inspection');
   const [searchParams] = useSearchParams();

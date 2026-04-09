@@ -40,7 +40,6 @@ export const EditInspectionPage = () => {
       <InspectionForm
         inspectionId={id}
         aiDraft={aiDraft}
-        aiSuggestedFields={aiSuggestedFields}
       />
     </>
   );
