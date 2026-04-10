@@ -17,11 +17,25 @@ export type AiMergeState = {
   suggestions: Record<string, AiFieldSuggestion>;
 };
 
-function isEmptyValue(value: unknown): boolean {
+export function isEmptyValue(value: unknown): boolean {
   if (value === undefined || value === null) return true;
   if (typeof value === 'string' && value.trim() === '') return true;
   if (Array.isArray(value) && value.length === 0) return true;
   return false;
+}
+
+export function isPendingSuggestion(
+  suggestion?: AiFieldSuggestion | null,
+): suggestion is AiFieldSuggestion {
+  return Boolean(suggestion && suggestion.status === 'pending');
+}
+
+export function shouldUseAiPrefill(
+  currentValue: unknown,
+  isDirty: boolean,
+  suggestion?: AiFieldSuggestion | null,
+): boolean {
+  return isPendingSuggestion(suggestion) && !isDirty && isEmptyValue(currentValue);
 }
 
 export function buildAiMergeState(

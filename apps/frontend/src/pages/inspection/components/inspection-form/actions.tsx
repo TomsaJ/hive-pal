@@ -34,6 +34,7 @@ import { AiBadge } from './ai-badge';
 import { AiSectionPreview } from './ai-section-preview';
 import type { AiMergeState } from '@/pages/inspection/lib/inspection-ai-merge';
 import { cn } from '@/lib/utils';
+import { shouldUseAiPrefill } from '@/pages/inspection/lib/inspection-ai-merge';
 
 const actionTypes = [
   { id: 'FEEDING', label: 'Feeding', Icon: Droplet },
@@ -130,6 +131,31 @@ const formatActionsPreview = (
   );
 };
 
+const PendingAiActionCard = ({
+  action,
+  t,
+}: {
+  action: Record<string, unknown>;
+  t: ReturnType<typeof useTranslation>['t'];
+}) => {
+  const actionType =
+    typeof action.type === 'string' ? action.type : 'UNKNOWN';
+
+  return (
+    <div className="rounded-md border border-blue-200 bg-blue-50/40 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="font-medium">
+          {formatActionTypeLabel(actionType, t)}
+        </span>
+        <AiBadge />
+      </div>
+      <pre className="whitespace-pre-wrap break-words text-xs text-muted-foreground">
+        {JSON.stringify(action, null, 2)}
+      </pre>
+    </div>
+  );
+};
+
 export const ActionsSection: React.FC<ActionsSectionProps> = ({
   editMode = false,
   isAiSuggested,
@@ -154,6 +180,22 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
   const formActions = watch('actions') || [];
   const actionsSuggestion = aiMergeState?.suggestions.actions;
   const isPending = actionsSuggestion?.status === 'pending';
+  const isDirty = Boolean(formState.dirtyFields.actions);
+
+  const previewActions =
+    shouldUseAiPrefill(formActions, isDirty, actionsSuggestion) &&
+    Array.isArray(actionsSuggestion?.aiValue)
+      ? (actionsSuggestion.aiValue as Record<string, unknown>[])
+      : [];
+
+  const visibleActionTypes = new Set([
+    ...formActions
+      .map(action => action.type)
+      .filter((type): type is string => typeof type === 'string'),
+    ...previewActions
+      .map(action => action.type)
+      .filter((type): type is string => typeof type === 'string'),
+  ]);
 
   const handleSave = useCallback(
     (action: ActionType) => {
@@ -306,7 +348,7 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
           className="flex flex-wrap gap-2"
         >
           {actionTypes.map(({ id, label, Icon }) => {
-            if (formActions.some(a => a.type === id)) return null;
+            if (visibleActionTypes.has(id)) return null;
 
             return (
               <Button
@@ -330,6 +372,18 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
 
       {formState.errors.actions && (
         <div className="text-red-500">{formState.errors.actions.message}</div>
+      )}
+
+      {previewActions.length > 0 && (
+        <div className="mt-4 space-y-3">
+          {previewActions.map((action, index) => (
+            <PendingAiActionCard
+              key={`ai-preview-${String(action.type ?? index)}-${index}`}
+              action={action}
+              t={t}
+            />
+          ))}
+        </div>
       )}
 
       <div

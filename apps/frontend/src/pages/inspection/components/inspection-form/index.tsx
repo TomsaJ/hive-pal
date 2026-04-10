@@ -226,11 +226,12 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
     });
   };
 
-  const acceptAllAiSuggestions = () => {
+  const acceptAllSafeAiSuggestions = () => {
     if (!aiMergeState) return;
 
     Object.values(aiMergeState.suggestions).forEach(suggestion => {
       if (suggestion.status !== 'pending') return;
+      if (suggestion.hasConflict) return;
 
       form.setValue(
         suggestion.field as keyof InspectionFormData,
@@ -243,14 +244,40 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
       );
     });
 
-    setAiMergeState({
-      suggestions: Object.fromEntries(
-        Object.entries(aiMergeState.suggestions).map(([field, suggestion]) => [
-          field,
-          { ...suggestion, status: 'accepted' },
-        ]),
-      ),
+    setAiMergeState(prev => {
+      if (!prev) return prev;
+
+      return {
+        suggestions: Object.fromEntries(
+          Object.entries(prev.suggestions).map(([field, suggestion]) => {
+            if (suggestion.status !== 'pending' || suggestion.hasConflict) {
+              return [field, suggestion];
+            }
+
+            return [field, { ...suggestion, status: 'accepted' }];
+          }),
+        ),
+      };
     });
+  };
+
+  const reviewConflicts = () => {
+    const firstConflict = aiMergeState
+      ? Object.values(aiMergeState.suggestions).find(
+          suggestion =>
+            suggestion.status === 'pending' && suggestion.hasConflict,
+        )
+      : null;
+
+    if (!firstConflict) return;
+
+    const element = document.querySelector(
+      `[data-ai-field="${firstConflict.field}"]`,
+    );
+
+    if (element instanceof HTMLElement) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   };
 
   const dismissAllAiSuggestions = () => {
@@ -317,7 +344,8 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
         <AiMergeBanner
           pendingCount={pendingSuggestionCount}
           conflictCount={conflictSuggestionCount}
-          onAcceptAll={acceptAllAiSuggestions}
+          onAcceptAllSafe={acceptAllSafeAiSuggestions}
+          onReviewConflicts={reviewConflicts}
           onDismissAll={dismissAllAiSuggestions}
         />
       )}

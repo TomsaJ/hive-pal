@@ -16,17 +16,22 @@ import { AiBadge } from './ai-badge';
 import { AiSectionPreview } from './ai-section-preview';
 import type { AiMergeState } from '@/pages/inspection/lib/inspection-ai-merge';
 import { cn } from '@/lib/utils';
+import { shouldUseAiPrefill } from '@/pages/inspection/lib/inspection-ai-merge';
 
 type ObservationItemProps<T> = {
   name: T;
   label: string;
   showAi?: boolean;
+  aiValue?: number | null;
+  useAiPrefill?: boolean;
 };
 
 const ObservationItem = <TName extends FieldPath<InspectionFormData>>({
   name,
   label,
   showAi = false,
+  aiValue,
+  useAiPrefill = false,
 }: ObservationItemProps<TName>) => {
   const { t } = useTranslation('inspection');
   const { control } = useFormContext<InspectionFormData>();
@@ -45,6 +50,8 @@ const ObservationItem = <TName extends FieldPath<InspectionFormData>>({
         name={name}
         render={({ field }) => {
           const currentValue = field.value as number | undefined;
+          const displayValue =
+            useAiPrefill && typeof aiValue === 'number' ? aiValue : currentValue;
 
           return (
             <FormItem>
@@ -62,7 +69,7 @@ const ObservationItem = <TName extends FieldPath<InspectionFormData>>({
                       <button
                         type="button"
                         className={`mr-2 flex h-8 w-8 items-center justify-center rounded-lg ${
-                          currentValue === 0
+                          displayValue === 0
                             ? 'bg-gray-600 text-white dark:bg-gray-300 dark:text-gray-900'
                             : 'bg-gray-100 dark:bg-gray-800'
                         }`}
@@ -83,8 +90,8 @@ const ObservationItem = <TName extends FieldPath<InspectionFormData>>({
                           if (hoveredValue != null && hoveredValue >= fullValue) {
                             color = 'bg-amber-200 dark:bg-amber-800';
                           } else if (
-                            currentValue != null &&
-                            currentValue >= fullValue
+                            displayValue != null &&
+                            displayValue >= fullValue
                           ) {
                             color = 'bg-amber-300 dark:bg-amber-700';
                           }
@@ -118,14 +125,14 @@ const ObservationItem = <TName extends FieldPath<InspectionFormData>>({
 
                       <div className="ml-4 h-8 w-8 text-center">
                         <span className="block h-8 rounded bg-gray-100 px-2 py-1 text-sm dark:bg-gray-800">
-                          {currentValue ?? '-'}
+                          {displayValue ?? '-'}
                         </span>
                       </div>
 
                       <Button
                         variant="ghost"
                         type="button"
-                        disabled={currentValue == null}
+                        disabled={displayValue == null}
                         className="ml-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
                         onClick={e => {
                           e.preventDefault();
@@ -183,7 +190,8 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
   onDismissSuggestion,
 }) => {
   const { t } = useTranslation('inspection');
-  const { control } = useFormContext<InspectionFormData>();
+  const form = useFormContext<InspectionFormData>();
+  const { control, formState } = form;
 
   const queenCells = useWatch({ name: 'observations.queenCells', control });
   const currentObservations = useWatch({ name: 'observations', control });
@@ -196,9 +204,23 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
       : undefined;
   const isPending = observationSuggestion?.status === 'pending';
 
+  const dirtyObservationFields = (formState.dirtyFields.observations ??
+    {}) as Partial<Record<keyof NonNullable<InspectionFormData['observations']>, unknown>>;
+
   const hasAiField = (
     key: keyof NonNullable<InspectionFormData['observations']>,
   ) => aiObservationValue?.[key] !== undefined;
+
+  const shouldPrefillField = (
+    key: keyof NonNullable<InspectionFormData['observations']>,
+    currentValue: unknown,
+  ) =>
+    hasAiField(key) &&
+    shouldUseAiPrefill(
+      currentValue,
+      Boolean(dirtyObservationFields[key]),
+      observationSuggestion,
+    );
 
   return (
     <div
@@ -234,29 +256,35 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
         <FormField
           control={control}
           name="observations.queenSeen"
-          render={({ field }) => (
-            <FormItem
-              className={cn(
-                'flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow transition-colors',
-                hasAiField('queenSeen') &&
-                  'border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
-              )}
-            >
-              <FormControl>
-                <Checkbox
-                  checked={field.value ?? false}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1">
-                <FormLabel className="flex items-center gap-2">
-                  <span>{t('observations.queenSeen')}</span>
-                  {hasAiField('queenSeen') && <AiBadge />}
-                </FormLabel>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            const displayChecked = shouldPrefillField('queenSeen', field.value)
+              ? Boolean(aiObservationValue?.queenSeen)
+              : Boolean(field.value ?? false);
+
+            return (
+              <FormItem
+                className={cn(
+                  'flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow transition-colors',
+                  hasAiField('queenSeen') &&
+                    'border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
+                )}
+              >
+                <FormControl>
+                  <Checkbox
+                    checked={displayChecked}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1">
+                  <FormLabel className="flex items-center gap-2">
+                    <span>{t('observations.queenSeen')}</span>
+                    {hasAiField('queenSeen') && <AiBadge />}
+                  </FormLabel>
+                </div>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
 
         <div className="col-span-3 mt-5 flex flex-col space-y-2">
@@ -264,16 +292,43 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
             name="observations.strength"
             label={t('observations.strength')}
             showAi={hasAiField('strength')}
+            aiValue={
+              typeof aiObservationValue?.strength === 'number'
+                ? aiObservationValue.strength
+                : undefined
+            }
+            useAiPrefill={shouldPrefillField(
+              'strength',
+              currentObservations?.strength,
+            )}
           />
           <ObservationItem
             name="observations.cappedBrood"
             label={t('observations.cappedBrood')}
             showAi={hasAiField('cappedBrood')}
+            aiValue={
+              typeof aiObservationValue?.cappedBrood === 'number'
+                ? aiObservationValue.cappedBrood
+                : undefined
+            }
+            useAiPrefill={shouldPrefillField(
+              'cappedBrood',
+              currentObservations?.cappedBrood,
+            )}
           />
           <ObservationItem
             name="observations.uncappedBrood"
             label={t('observations.uncappedBrood')}
             showAi={hasAiField('uncappedBrood')}
+            aiValue={
+              typeof aiObservationValue?.uncappedBrood === 'number'
+                ? aiObservationValue.uncappedBrood
+                : undefined
+            }
+            useAiPrefill={shouldPrefillField(
+              'uncappedBrood',
+              currentObservations?.uncappedBrood,
+            )}
           />
 
           <div
@@ -297,8 +352,15 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                   'poor',
                 ];
 
+                const displayValue = shouldPrefillField(
+                  'broodPattern',
+                  currentValue,
+                )
+                  ? aiObservationValue?.broodPattern
+                  : currentValue;
+
                 const selectPattern = (value: string) => {
-                  field.onChange(currentValue === value ? null : value);
+                  field.onChange(displayValue === value ? null : value);
                 };
 
                 const aiBroodPattern = aiObservationValue?.broodPattern;
@@ -318,7 +380,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                             key={option}
                             className={cn(
                               'cursor-pointer rounded-md border p-2 text-center text-sm transition-colors',
-                              currentValue === option
+                              displayValue === option
                                 ? 'border-green-300 bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-900/30 dark:text-green-300'
                                 : 'border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700',
                               isAiRecommended &&
@@ -347,16 +409,43 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
             name="observations.honeyStores"
             label={t('observations.honeyStores')}
             showAi={hasAiField('honeyStores')}
+            aiValue={
+              typeof aiObservationValue?.honeyStores === 'number'
+                ? aiObservationValue.honeyStores
+                : undefined
+            }
+            useAiPrefill={shouldPrefillField(
+              'honeyStores',
+              currentObservations?.honeyStores,
+            )}
           />
           <ObservationItem
             name="observations.pollenStores"
             label={t('observations.pollenStores')}
             showAi={hasAiField('pollenStores')}
+            aiValue={
+              typeof aiObservationValue?.pollenStores === 'number'
+                ? aiObservationValue.pollenStores
+                : undefined
+            }
+            useAiPrefill={shouldPrefillField(
+              'pollenStores',
+              currentObservations?.pollenStores,
+            )}
           />
           <ObservationItem
             name="observations.queenCells"
             label={t('observations.queenCells')}
             showAi={hasAiField('queenCells')}
+            aiValue={
+              typeof aiObservationValue?.queenCells === 'number'
+                ? aiObservationValue.queenCells
+                : undefined
+            }
+            useAiPrefill={shouldPrefillField(
+              'queenCells',
+              currentObservations?.queenCells,
+            )}
           />
 
           {(queenCells ?? 0) > 0 && (
@@ -364,52 +453,70 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
               <FormField
                 control={control}
                 name="observations.swarmCells"
-                render={({ field }) => (
-                  <FormItem
-                    className={cn(
-                      'flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 shadow transition-colors',
-                      hasAiField('swarmCells') &&
-                        'border border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
-                    )}
-                  >
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value ?? false}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="flex items-center gap-2">
-                      <span>{t('observations.swarmCells')}</span>
-                      {hasAiField('swarmCells') && <AiBadge />}
-                    </FormLabel>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const displayChecked = shouldPrefillField(
+                    'swarmCells',
+                    field.value,
+                  )
+                    ? Boolean(aiObservationValue?.swarmCells)
+                    : Boolean(field.value ?? false);
+
+                  return (
+                    <FormItem
+                      className={cn(
+                        'flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 shadow transition-colors',
+                        hasAiField('swarmCells') &&
+                          'border border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
+                      )}
+                    >
+                      <FormControl>
+                        <Checkbox
+                          checked={displayChecked}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="flex items-center gap-2">
+                        <span>{t('observations.swarmCells')}</span>
+                        {hasAiField('swarmCells') && <AiBadge />}
+                      </FormLabel>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
               <FormField
                 control={control}
                 name="observations.supersedureCells"
-                render={({ field }) => (
-                  <FormItem
-                    className={cn(
-                      'flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 shadow transition-colors',
-                      hasAiField('supersedureCells') &&
-                        'border border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
-                    )}
-                  >
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value ?? false}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="flex items-center gap-2">
-                      <span>{t('observations.supersedureCells')}</span>
-                      {hasAiField('supersedureCells') && <AiBadge />}
-                    </FormLabel>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const displayChecked = shouldPrefillField(
+                    'supersedureCells',
+                    field.value,
+                  )
+                    ? Boolean(aiObservationValue?.supersedureCells)
+                    : Boolean(field.value ?? false);
+
+                  return (
+                    <FormItem
+                      className={cn(
+                        'flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 shadow transition-colors',
+                        hasAiField('supersedureCells') &&
+                          'border border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
+                      )}
+                    >
+                      <FormControl>
+                        <Checkbox
+                          checked={displayChecked}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="flex items-center gap-2">
+                        <span>{t('observations.supersedureCells')}</span>
+                        {hasAiField('supersedureCells') && <AiBadge />}
+                      </FormLabel>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
           )}
@@ -447,13 +554,20 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                 const aiValues = Array.isArray(
                   aiObservationValue?.additionalObservations,
                 )
-                  ? aiObservationValue?.additionalObservations
+                  ? (aiObservationValue.additionalObservations as string[])
                   : [];
 
+                const displayValues = shouldPrefillField(
+                  'additionalObservations',
+                  currentValues,
+                )
+                  ? aiValues
+                  : currentValues;
+
                 const toggleObservation = (value: string) => {
-                  const updated = currentValues.includes(value)
-                    ? currentValues.filter(v => v !== value)
-                    : [...currentValues, value];
+                  const updated = displayValues.includes(value)
+                    ? displayValues.filter(v => v !== value)
+                    : [...displayValues, value];
                   field.onChange(updated);
                 };
 
@@ -461,14 +575,14 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                   <FormItem>
                     <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
                       {availableOptions.map(option => {
-                        const isAiRecommended = aiValues?.includes(option);
+                        const isAiRecommended = aiValues.includes(option);
 
                         return (
                           <div
                             key={option}
                             className={cn(
                               'cursor-pointer rounded-md border p-2 text-center text-sm transition-colors',
-                              currentValues.includes(option)
+                              displayValues.includes(option)
                                 ? 'border-blue-300 bg-blue-100 text-blue-800 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                                 : 'border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700',
                               isAiRecommended &&
@@ -491,9 +605,16 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
             />
           </div>
 
-          <div className="mt-6">
-            <h4 className="mb-3 text-md font-medium">
-              {t('observations.reminderObservations')}
+          <div
+            className={cn(
+              'mt-6 rounded-md p-2 transition-colors',
+              hasAiField('reminderObservations') &&
+                'border border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
+            )}
+          >
+            <h4 className="mb-3 flex items-center gap-2 text-md font-medium">
+              <span>{t('observations.reminderObservations')}</span>
+              {hasAiField('reminderObservations') && <AiBadge />}
             </h4>
             <FormField
               control={control}
@@ -509,30 +630,52 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                   'low_stores',
                   'prepare_for_winter',
                 ];
+                const aiValues = Array.isArray(
+                  aiObservationValue?.reminderObservations,
+                )
+                  ? (aiObservationValue.reminderObservations as string[])
+                  : [];
+
+                const displayValues = shouldPrefillField(
+                  'reminderObservations',
+                  currentValues,
+                )
+                  ? aiValues
+                  : currentValues;
 
                 const toggleObservation = (value: string) => {
-                  const updated = currentValues.includes(value)
-                    ? currentValues.filter(v => v !== value)
-                    : [...currentValues, value];
+                  const updated = displayValues.includes(value)
+                    ? displayValues.filter(v => v !== value)
+                    : [...displayValues, value];
                   field.onChange(updated);
                 };
 
                 return (
                   <FormItem>
                     <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
-                      {availableOptions.map(option => (
-                        <div
-                          key={option}
-                          className={`cursor-pointer rounded-md border p-2 text-center text-sm transition-colors ${
-                            currentValues.includes(option)
-                              ? 'border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                              : 'border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700'
-                          }`}
-                          onClick={() => toggleObservation(option)}
-                        >
-                          {t(`observations.reminder.${option}`)}
-                        </div>
-                      ))}
+                      {availableOptions.map(option => {
+                        const isAiRecommended = aiValues.includes(option);
+
+                        return (
+                          <div
+                            key={option}
+                            className={cn(
+                              'cursor-pointer rounded-md border p-2 text-center text-sm transition-colors',
+                              displayValues.includes(option)
+                                ? 'border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                                : 'border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700',
+                              isAiRecommended &&
+                                'ring-2 ring-blue-300 dark:ring-blue-700',
+                            )}
+                            onClick={() => toggleObservation(option)}
+                          >
+                            <div className="flex items-center justify-center gap-2">
+                              <span>{t(`observations.reminder.${option}`)}</span>
+                              {isAiRecommended && <AiBadge />}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                     <FormMessage />
                   </FormItem>

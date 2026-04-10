@@ -13,6 +13,7 @@ import { AiBadge } from './ai-badge';
 import { AiSectionPreview } from './ai-section-preview';
 import type { AiMergeState } from '@/pages/inspection/lib/inspection-ai-merge';
 import { cn } from '@/lib/utils';
+import { shouldUseAiPrefill } from '@/pages/inspection/lib/inspection-ai-merge';
 
 type NotesSectionProps = {
   isAiSuggested?: (field: keyof InspectionFormData) => boolean;
@@ -32,6 +33,7 @@ export function NotesSection({
 
   const notesSuggestion = aiMergeState?.suggestions.notes;
   const isPending = notesSuggestion?.status === 'pending';
+  const isDirty = Boolean(form.formState.dirtyFields.notes);
 
   return (
     <div
@@ -52,40 +54,50 @@ export function NotesSection({
       <FormField
         control={form.control}
         name="notes"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="flex items-center gap-2">
-              <span>Notes</span>
-              {isAiSuggested?.('notes') && <AiBadge />}
-            </FormLabel>
+        render={({ field }) => {
+          const displayValue = shouldUseAiPrefill(
+            field.value,
+            isDirty,
+            notesSuggestion,
+          )
+            ? String(notesSuggestion?.aiValue ?? '')
+            : (field.value ?? '');
 
-            <FormControl>
-              <Textarea
-                placeholder={t('inspection:form.notes.placeholder')}
-                className={cn(
-                  'min-h-[120px]',
-                  isPending &&
-                    'border-blue-200 bg-blue-50/20 dark:border-blue-900 dark:bg-blue-950/10',
-                )}
-                {...field}
-                value={field.value ?? ''}
+          return (
+            <FormItem>
+              <FormLabel className="flex items-center gap-2">
+                <span>Notes</span>
+                {isAiSuggested?.('notes') && <AiBadge />}
+              </FormLabel>
+
+              <FormControl>
+                <Textarea
+                  placeholder={t('inspection:form.notes.placeholder')}
+                  className={cn(
+                    'min-h-[120px]',
+                    isPending &&
+                      'border-blue-200 bg-blue-50/20 dark:border-blue-900 dark:bg-blue-950/10',
+                  )}
+                  {...field}
+                  value={displayValue}
+                />
+              </FormControl>
+
+              <AiSectionPreview
+                title="Notes"
+                summary="Review AI-generated notes before applying them."
+                currentValue={field.value}
+                suggestedValue={notesSuggestion?.aiValue as string | undefined}
+                hasConflict={notesSuggestion?.hasConflict}
+                status={notesSuggestion?.status}
+                onAccept={() => onAcceptSuggestion?.('notes')}
+                onDismiss={() => onDismissSuggestion?.('notes')}
               />
-            </FormControl>
 
-            <AiSectionPreview
-              title="Notes"
-              summary="Review AI-generated notes before applying them."
-              currentValue={field.value}
-              suggestedValue={notesSuggestion?.aiValue as string | undefined}
-              hasConflict={notesSuggestion?.hasConflict}
-              status={notesSuggestion?.status}
-              onAccept={() => onAcceptSuggestion?.('notes')}
-              onDismiss={() => onDismissSuggestion?.('notes')}
-            />
-
-            <FormMessage />
-          </FormItem>
-        )}
+              <FormMessage />
+            </FormItem>
+          );
+        }}
       />
     </div>
   );
