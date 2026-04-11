@@ -296,6 +296,7 @@ export class InspectionsService {
         id: inspection.id,
         hiveId: inspection.hiveId,
         date: inspection.date.toISOString(),
+        isAllDay: inspection.isAllDay,
         temperature: inspection.temperature ?? null,
         weatherConditions: inspection.weatherConditions ?? null,
         notes: inspection.notes?.[0]?.text ?? null,
@@ -355,6 +356,7 @@ export class InspectionsService {
       id: inspection.id,
       hiveId: inspection.hiveId,
       date: inspection.date.toISOString(),
+      isAllDay: inspection.isAllDay,
       temperature: inspection.temperature ?? null,
       weatherConditions: inspection.weatherConditions ?? null,
       notes: inspection.notes?.[0]?.text ?? null,
@@ -530,6 +532,7 @@ export class InspectionsService {
           date: updated.date.toISOString(),
           id: updated.id,
           hiveId: updated.hiveId,
+          isAllDay: updated.isAllDay,
           status: updated.status as InspectionStatus,
         };
       },
@@ -638,10 +641,13 @@ export class InspectionsService {
     // Update any overdue inspection statuses before fetching
     await this.inspectionStatusUpdater.checkAndUpdateInspectionStatuses();
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const now = new Date();
+    const today = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
+    const tomorrow = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1),
+    );
 
     const whereClause: Prisma.InspectionWhereInput = {
       status: InspectionStatus.SCHEDULED,
@@ -707,6 +713,7 @@ export class InspectionsService {
         id: inspection.id,
         hiveId: inspection.hiveId,
         date: inspection.date.toISOString(),
+        isAllDay: inspection.isAllDay,
         temperature: inspection.temperature ?? null,
         weatherConditions: inspection.weatherConditions ?? null,
         notes: inspection.notes?.[0]?.text ?? null,

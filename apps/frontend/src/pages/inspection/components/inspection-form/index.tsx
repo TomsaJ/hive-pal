@@ -45,6 +45,7 @@ import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { AudioSection } from './audio-section';
 import { ScorePreviewSection } from './score-preview';
+import { InspectionDateTimePicker } from '@/components/inspection-date-time-picker';
 
 interface PendingRecording {
   id: string;
@@ -91,6 +92,7 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
       hiveId,
       ...inspection,
       date: inspection?.date ? new Date(inspection.date) : new Date(),
+      isAllDay: inspection?.isAllDay ?? true,
       actions:
         inspection?.actions?.map(action => {
           if (action.details.type === ActionType.FEEDING) {
@@ -186,6 +188,7 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
   });
 
   const date = form.watch('date');
+  const isAllDay = form.watch('isAllDay') ?? true;
   const isInFuture = date && date > new Date();
   const isEdit = Boolean(inspectionId);
   const isCompleted = inspection?.status === InspectionStatus.COMPLETED;
@@ -246,7 +249,9 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
                           )}
                         >
                           {field.value ? (
-                            format(field.value, 'PPP')
+                            isAllDay
+                              ? format(field.value, 'PPP')
+                              : format(field.value, 'PPP HH:mm')
                           ) : (
                             <span>{t('inspection:form.pickDate')}</span>
                           )}
@@ -258,11 +263,32 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={field.onChange}
+                        onSelect={selected => {
+                          if (!selected) return;
+                          if (!isAllDay && field.value) {
+                            selected.setHours(
+                              field.value.getHours(),
+                              field.value.getMinutes(),
+                              0,
+                              0,
+                            );
+                          }
+                          field.onChange(selected);
+                        }}
                         initialFocus
                       />
                     </PopoverContent>
                   </Popover>
+
+                  <div className="flex items-center gap-2 mt-1">
+                    <InspectionDateTimePicker
+                      date={field.value ?? new Date()}
+                      isAllDay={isAllDay}
+                      onDateChange={field.onChange}
+                      onIsAllDayChange={checked => form.setValue('isAllDay', checked)}
+                    />
+                  </div>
+
                   {isInFuture && (
                     <div className={'p-4 rounded'}>
                       <strong className={'text-blue-500'}>

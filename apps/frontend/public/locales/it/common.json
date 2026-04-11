@@ -225,5 +225,10 @@
   },
   "footer": {
     "privacyPolicy": "Informativa sulla privacy"
+  },
+  "timeline": {
+    "inspectHive": "Ispeziona {{hiveName}}",
+    "doInspection": "Esegui ispezione",
+    "reschedule": "Riprogramma"
   }
 }
