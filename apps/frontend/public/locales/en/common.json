@@ -208,6 +208,7 @@
   "quickAdd": {
     "title": "Add Entry",
     "quickCheck": "Quick Check",
+    "inspection": "Inspection",
     "action": "Action",
     "photo": "Photo",
     "document": "Document"
