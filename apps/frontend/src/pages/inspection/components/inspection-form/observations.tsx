@@ -259,7 +259,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
     if (suggestion?.status !== 'pending') return false;
     if (dirtyObservationFields[key]) return false;
 
-    return currentValue === 0 || currentValue === null || currentValue === undefined;
+    return currentValue === null || currentValue === undefined;
   };
 
   return (
