@@ -188,18 +188,8 @@ SCHEMA = {
     ]
 }
 
-
-def truncate_transcript(text: str, max_chars: int = MAX_TRANSCRIPT_CHARS) -> str:
-    text = (text or "").strip()
-    if len(text) <= max_chars:
-        return text
-    return text[:max_chars]
-
-
-def empty_recommendation() -> dict:
+def empty_form_draft():
     return {
-        "hiveId": None,
-        "date": None,
         "temperature": None,
         "weatherConditions": None,
         "notes": None,
@@ -219,6 +209,12 @@ def empty_recommendation() -> dict:
         },
         "actions": [],
     }
+
+def truncate_transcript(text: str, max_chars: int = MAX_TRANSCRIPT_CHARS) -> str:
+    text = (text or "").strip()
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars]
 
 
 def require_api_key(req):
@@ -441,8 +437,28 @@ def normalize_recommendation(data: dict) -> dict:
         "requires_treatment", "low_stores", "prepare_for_winter"
     }
 
-    normalized = empty_recommendation()
-
+    normalized = {
+        "hiveId": data.get("hiveId"),
+        "date": data.get("date"),
+        "temperature": data.get("temperature"),
+        "weatherConditions": data.get("weatherConditions"),
+        "notes": data.get("notes"),
+        "observations": {
+            "strength": None,
+            "uncappedBrood": None,
+            "cappedBrood": None,
+            "honeyStores": None,
+            "pollenStores": None,
+            "queenCells": None,
+            "swarmCells": None,
+            "supersedureCells": None,
+            "queenSeen": None,
+            "broodPattern": None,
+            "additionalObservations": [],
+            "reminderObservations": [],
+        },
+        "actions": [],
+    }
     normalized["hiveId"] = data.get("hiveId")
     normalized["date"] = data.get("date")
     normalized["temperature"] = data.get("temperature")
@@ -545,6 +561,87 @@ def normalize_recommendation(data: dict) -> dict:
     normalized["actions"] = normalized_actions
     return normalized
 
+def map_ai_to_form_draft(ai: dict) -> dict:
+    draft = empty_form_draft()
+
+    observations = ai.get("observations") or {}
+
+    draft["temperature"] = ai.get("temperature")
+    draft["weatherConditions"] = ai.get("weatherConditions")
+    draft["notes"] = ai.get("notes")
+
+    draft["observations"] = {
+        "strength": observations.get("strength"),
+        "uncappedBrood": observations.get("uncappedBrood"),
+        "cappedBrood": observations.get("cappedBrood"),
+        "honeyStores": observations.get("honeyStores"),
+        "pollenStores": observations.get("pollenStores"),
+        "queenCells": observations.get("queenCells"),
+        "swarmCells": observations.get("swarmCells"),
+        "supersedureCells": observations.get("supersedureCells"),
+        "queenSeen": observations.get("queenSeen"),
+        "broodPattern": observations.get("broodPattern"),
+        "additionalObservations": observations.get("additionalObservations", []),
+        "reminderObservations": observations.get("reminderObservations", []),
+    }
+
+    mapped_actions = []
+
+    for action in ai.get("actions", []):
+        if not isinstance(action, dict):
+            continue
+
+        action_type = action.get("type")
+        details = action.get("details") or {}
+
+        if action_type == "FEEDING":
+            mapped_actions.append({
+                "type": "FEEDING",
+                "feedType": details.get("feedType") or "",
+                "quantity": details.get("amount"),
+                "unit": details.get("unit") or "",
+                "concentration": details.get("concentration") or "",
+                "notes": action.get("notes") or "",
+            })
+
+        elif action_type == "TREATMENT":
+            mapped_actions.append({
+                "type": "TREATMENT",
+                "treatmentType": details.get("product") or "",
+                "amount": details.get("quantity"),
+                "unit": details.get("unit") or "",
+                "notes": action.get("notes") or "",
+            })
+
+        elif action_type == "FRAME":
+            mapped_actions.append({
+                "type": "FRAME",
+                "frames": details.get("quantity"),
+                "notes": action.get("notes") or "",
+            })
+
+        elif action_type == "MAINTENANCE":
+            mapped_actions.append({
+                "type": "MAINTENANCE",
+                "component": details.get("component") or "",
+                "status": details.get("status") or "",
+                "notes": action.get("notes") or "",
+            })
+
+        elif action_type == "NOTE":
+            mapped_actions.append({
+                "type": "NOTE",
+                "notes": action.get("notes") or details.get("content") or "",
+            })
+
+        elif action_type == "OTHER":
+            mapped_actions.append({
+                "type": "OTHER",
+                "notes": action.get("notes") or "",
+            })
+
+    draft["actions"] = mapped_actions
+    return draft
 
 def recommend_from_transcript(transcript: str):
     payload = {
@@ -622,11 +719,14 @@ def process_audio_file(audio_path: str):
     analysis_error = None
     try:
         trimmed_transcript = truncate_transcript(transcription["text"])
-        recommendation = recommend_from_transcript(trimmed_transcript)
+
+        ai_result = recommend_from_transcript(trimmed_transcript)
+        recommendation = map_ai_to_form_draft(ai_result)
+
     except Exception as exc:
         analysis_error = str(exc)
         app.logger.exception("Recommendation generation failed")
-        recommendation = empty_recommendation()
+        recommendation = empty_form_draft()
 
     files = save_outputs(base_name, transcription, recommendation)
 
@@ -637,7 +737,6 @@ def process_audio_file(audio_path: str):
         "analysis_error": analysis_error,
         "files": files,
     }
-
 
 @app.post("/process-upload")
 def process_upload():
@@ -698,7 +797,10 @@ def recommend_endpoint():
     data = request.get_json(force=True)
     transcript = data["transcript"]
     trimmed_transcript = truncate_transcript(transcript)
-    result = recommend_from_transcript(trimmed_transcript)
+
+    ai_result = recommend_from_transcript(trimmed_transcript)
+    result = map_ai_to_form_draft(ai_result)
+
     return jsonify(result)
 
 

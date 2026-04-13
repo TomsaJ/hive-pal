@@ -105,34 +105,56 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
             const details = action.details;
             return {
               type: ActionType.FEEDING,
-              notes: action.notes,
+              notes: action.notes ?? '',
               feedType: details.feedType,
               quantity: details.amount,
               unit: details.unit,
-              concentration: details.concentration,
+              concentration: details.concentration ?? '',
             };
-          } else if (action.details.type === ActionType.TREATMENT) {
+          }
+
+          if (action.details.type === ActionType.TREATMENT) {
             const details = action.details;
             return {
               type: ActionType.TREATMENT,
-              notes: action.notes,
+              notes: action.notes ?? '',
               amount: details.quantity,
               treatmentType: details.product,
               unit: details.unit,
             };
-          } else if (action.details.type === ActionType.FRAME) {
+          }
+
+          if (action.details.type === ActionType.FRAME) {
             const details = action.details;
             return {
               type: ActionType.FRAME,
-              notes: action.notes,
+              notes: action.notes ?? '',
               frames: details.quantity,
             };
-          } else {
+          }
+
+          if (action.details.type === ActionType.MAINTENANCE) {
+            const details = action.details;
             return {
-              type: ActionType.OTHER,
-              notes: action.notes,
+              type: ActionType.MAINTENANCE,
+              notes: action.notes ?? '',
+              component: details.component,
+              status: details.status,
             };
           }
+
+          if (action.details.type === ActionType.NOTE) {
+            const details = action.details;
+            return {
+              type: ActionType.NOTE,
+              notes: details.content || action.notes || '',
+            };
+          }
+
+          return {
+            type: ActionType.OTHER,
+            notes: action.notes || '',
+          };
         }) || [],
     },
   });
