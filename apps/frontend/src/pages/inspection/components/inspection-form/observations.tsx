@@ -22,7 +22,7 @@ type ObservationItemProps<TName extends FieldPath<InspectionFormData>> = {
   name: TName;
   label: string;
   showAi?: boolean;
-  aiValue?: number | null;
+  aiValue?: unknown;
   useAiPrefill?: boolean;
   suggestionField?: string;
   suggestionStatus?: 'pending' | 'accepted' | 'dismissed';
@@ -37,6 +37,14 @@ const formatPreviewValue = (value: unknown): string => {
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (value === '') return '—';
   return String(value);
+};
+
+const toNumericValue = (value: unknown): number | undefined => {
+  if (value === null || value === undefined || value === '') return undefined;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 };
 
 const PreviewValuePill: React.FC<{
@@ -111,8 +119,11 @@ const ObservationItem = <TName extends FieldPath<InspectionFormData>>({
         name={name}
         render={({ field }) => {
           const currentValue = field.value as number | undefined | null;
+          const aiNumericValue = toNumericValue(aiValue);
           const displayValue =
-            useAiPrefill && typeof aiValue === 'number' ? aiValue : currentValue;
+            useAiPrefill && aiNumericValue !== undefined
+              ? aiNumericValue
+              : currentValue;
 
           return (
             <FormItem>
@@ -214,7 +225,7 @@ const ObservationItem = <TName extends FieldPath<InspectionFormData>>({
                         isVisible={Boolean(suggestionField)}
                         hasConflict={suggestionConflict}
                         currentValue={currentValue}
-                        aiValue={aiValue}
+                        aiValue={aiNumericValue}
                       />
 
                       <AiFieldControls
@@ -312,10 +323,12 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
     currentValue: unknown,
   ) => {
     const suggestion = aiMergeState?.suggestions[`observations.${key}`];
+    const aiValue = suggestion?.aiValue;
 
     if (!hasAiField(key)) return false;
     if (suggestion?.status !== 'pending') return false;
     if (dirtyObservationFields[key]) return false;
+    if (toNumericValue(aiValue) === undefined) return false;
 
     return currentValue === null || currentValue === undefined;
   };
@@ -403,11 +416,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
             name="observations.strength"
             label={t('observations.strength')}
             showAi={hasAiField('strength')}
-            aiValue={
-              typeof strengthSuggestion?.aiValue === 'number'
-                ? strengthSuggestion.aiValue
-                : undefined
-            }
+            aiValue={strengthSuggestion?.aiValue}
             useAiPrefill={shouldPrefillNumericField(
               'strength',
               currentObservations?.strength,
@@ -423,11 +432,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
             name="observations.cappedBrood"
             label={t('observations.cappedBrood')}
             showAi={hasAiField('cappedBrood')}
-            aiValue={
-              typeof cappedBroodSuggestion?.aiValue === 'number'
-                ? cappedBroodSuggestion.aiValue
-                : undefined
-            }
+            aiValue={cappedBroodSuggestion?.aiValue}
             useAiPrefill={shouldPrefillNumericField(
               'cappedBrood',
               currentObservations?.cappedBrood,
@@ -443,11 +448,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
             name="observations.uncappedBrood"
             label={t('observations.uncappedBrood')}
             showAi={hasAiField('uncappedBrood')}
-            aiValue={
-              typeof uncappedBroodSuggestion?.aiValue === 'number'
-                ? uncappedBroodSuggestion.aiValue
-                : undefined
-            }
+            aiValue={uncappedBroodSuggestion?.aiValue}
             useAiPrefill={shouldPrefillNumericField(
               'uncappedBrood',
               currentObservations?.uncappedBrood,
@@ -566,11 +567,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
             name="observations.honeyStores"
             label={t('observations.honeyStores')}
             showAi={hasAiField('honeyStores')}
-            aiValue={
-              typeof honeyStoresSuggestion?.aiValue === 'number'
-                ? honeyStoresSuggestion.aiValue
-                : undefined
-            }
+            aiValue={honeyStoresSuggestion?.aiValue}
             useAiPrefill={shouldPrefillNumericField(
               'honeyStores',
               currentObservations?.honeyStores,
@@ -586,11 +583,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
             name="observations.pollenStores"
             label={t('observations.pollenStores')}
             showAi={hasAiField('pollenStores')}
-            aiValue={
-              typeof pollenStoresSuggestion?.aiValue === 'number'
-                ? pollenStoresSuggestion.aiValue
-                : undefined
-            }
+            aiValue={pollenStoresSuggestion?.aiValue}
             useAiPrefill={shouldPrefillNumericField(
               'pollenStores',
               currentObservations?.pollenStores,
@@ -606,11 +599,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
             name="observations.queenCells"
             label={t('observations.queenCells')}
             showAi={hasAiField('queenCells')}
-            aiValue={
-              typeof queenCellsSuggestion?.aiValue === 'number'
-                ? queenCellsSuggestion.aiValue
-                : undefined
-            }
+            aiValue={queenCellsSuggestion?.aiValue}
             useAiPrefill={shouldPrefillNumericField(
               'queenCells',
               currentObservations?.queenCells,
