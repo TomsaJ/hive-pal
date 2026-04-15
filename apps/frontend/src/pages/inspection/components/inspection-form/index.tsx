@@ -41,7 +41,7 @@ import {
 } from '@/api/hooks';
 import { ActionType, InspectionStatus } from 'shared-schemas';
 import { mapWeatherConditionToForm } from '@/utils/weather-mapping';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { AudioSection } from './audio-section';
 import { ScorePreviewSection } from './score-preview';
@@ -194,17 +194,31 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
   }, [weatherData, form, isDateInFuture, selectedHive?.apiaryId]);
 
   const [aiMergeState, setAiMergeState] = useState<AiMergeState | null>(null);
-  const initializedAiMergeRef = useRef(false);
 
   useEffect(() => {
-    if (!aiDraft || initializedAiMergeRef.current) return;
+    if (!aiDraft || aiSuggestedFields.length === 0) {
+      setAiMergeState(null);
+      return;
+    }
 
     const currentValues = form.getValues();
     const mergeState = buildAiMergeState(currentValues, aiDraft);
 
-    setAiMergeState(mergeState);
-    initializedAiMergeRef.current = true;
-  }, [aiDraft, form]);
+    const filteredSuggestions = Object.fromEntries(
+      Object.entries(mergeState.suggestions).filter(([field]) =>
+        aiSuggestedFieldSet.has(field),
+      ),
+    );
+
+    if (Object.keys(filteredSuggestions).length === 0) {
+      setAiMergeState(null);
+      return;
+    }
+
+    setAiMergeState({
+      suggestions: filteredSuggestions,
+    });
+  }, [aiDraft, aiSuggestedFields, aiSuggestedFieldSet, form]);
 
   const acceptAiSuggestion = (field: string) => {
     const suggestion = aiMergeState?.suggestions[field];
