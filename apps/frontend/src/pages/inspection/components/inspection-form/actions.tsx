@@ -178,13 +178,16 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
 
   const formActions = watch('actions') || [];
-  const actionsSuggestion = aiMergeState?.suggestions.actions;
+  const actionsSuggestion = isAiSuggested?.('actions')
+    ? aiMergeState?.suggestions.actions
+    : undefined;
   const isPending = actionsSuggestion?.status === 'pending';
   const isDirty = Boolean(formState.dirtyFields.actions);
 
   const previewActions =
+    actionsSuggestion &&
     shouldUseAiPrefill(formActions, isDirty, actionsSuggestion) &&
-    Array.isArray(actionsSuggestion?.aiValue)
+    Array.isArray(actionsSuggestion.aiValue)
       ? (actionsSuggestion.aiValue as Record<string, unknown>[])
       : [];
 
@@ -324,23 +327,25 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
             ? t('inspection:form.actions.titleSingular')
             : t('inspection:form.actions.title')}
         </span>
-        {isAiSuggested?.('actions') && <AiBadge />}
+        {actionsSuggestion && <AiBadge />}
       </h3>
 
-      <AiSectionPreview
-        title={t('inspection:form.actions.title')}
-        summary={
-          suggestedCount > 0
-            ? `${suggestedCount} AI-suggested action${suggestedCount === 1 ? '' : 's'}`
-            : 'Review AI-suggested actions before applying them.'
-        }
-        currentValue={formatActionsPreview(formActions, t)}
-        suggestedValue={formatActionsPreview(actionsSuggestion?.aiValue, t)}
-        hasConflict={actionsSuggestion?.hasConflict}
-        status={actionsSuggestion?.status}
-        onAccept={() => onAcceptSuggestion?.('actions')}
-        onDismiss={() => onDismissSuggestion?.('actions')}
-      />
+      {actionsSuggestion && (
+        <AiSectionPreview
+          title={t('inspection:form.actions.title')}
+          summary={
+            suggestedCount > 0
+              ? `${suggestedCount} AI-suggested action${suggestedCount === 1 ? '' : 's'}`
+              : 'Review AI-suggested actions before applying them.'
+          }
+          currentValue={formatActionsPreview(formActions, t)}
+          suggestedValue={formatActionsPreview(actionsSuggestion.aiValue, t)}
+          hasConflict={actionsSuggestion.hasConflict}
+          status={actionsSuggestion.status}
+          onAccept={() => onAcceptSuggestion?.('actions')}
+          onDismiss={() => onDismissSuggestion?.('actions')}
+        />
+      )}
 
       {!editMode && (
         <div

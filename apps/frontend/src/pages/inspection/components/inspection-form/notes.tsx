@@ -31,7 +31,10 @@ export function NotesSection({
   const { t } = useTranslation('inspection');
   const form = useFormContext<InspectionFormData>();
 
-  const notesSuggestion = aiMergeState?.suggestions.notes;
+  const notesSuggestion = isAiSuggested?.('notes')
+    ? aiMergeState?.suggestions.notes
+    : undefined;
+
   const isPending = notesSuggestion?.status === 'pending';
   const isDirty = Boolean(form.formState.dirtyFields.notes);
 
@@ -55,19 +58,17 @@ export function NotesSection({
         control={form.control}
         name="notes"
         render={({ field }) => {
-          const displayValue = shouldUseAiPrefill(
-            field.value,
-            isDirty,
-            notesSuggestion,
-          )
-            ? String(notesSuggestion?.aiValue ?? '')
-            : (field.value ?? '');
+          const displayValue =
+            notesSuggestion &&
+            shouldUseAiPrefill(field.value, isDirty, notesSuggestion)
+              ? String(notesSuggestion.aiValue ?? '')
+              : (field.value ?? '');
 
           return (
             <FormItem>
               <FormLabel className="flex items-center gap-2">
                 <span>Notes</span>
-                {isAiSuggested?.('notes') && <AiBadge />}
+                {notesSuggestion && <AiBadge />}
               </FormLabel>
 
               <FormControl>
@@ -83,16 +84,18 @@ export function NotesSection({
                 />
               </FormControl>
 
-              <AiSectionPreview
-                title="Notes"
-                summary="Review AI-generated notes before applying them."
-                currentValue={field.value}
-                suggestedValue={notesSuggestion?.aiValue as string | undefined}
-                hasConflict={notesSuggestion?.hasConflict}
-                status={notesSuggestion?.status}
-                onAccept={() => onAcceptSuggestion?.('notes')}
-                onDismiss={() => onDismissSuggestion?.('notes')}
-              />
+              {notesSuggestion && (
+                <AiSectionPreview
+                  title="Notes"
+                  summary="Review AI-generated notes before applying them."
+                  currentValue={field.value}
+                  suggestedValue={notesSuggestion.aiValue as string | undefined}
+                  hasConflict={notesSuggestion.hasConflict}
+                  status={notesSuggestion.status}
+                  onAccept={() => onAcceptSuggestion?.('notes')}
+                  onDismiss={() => onDismissSuggestion?.('notes')}
+                />
+              )}
 
               <FormMessage />
             </FormItem>

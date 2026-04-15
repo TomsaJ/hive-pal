@@ -77,8 +77,13 @@ export const WeatherSection = ({
     rainy: t('inspection:form.weather.rainy'),
   };
 
-  const temperatureSuggestion = aiMergeState?.suggestions.temperature;
-  const weatherConditionSuggestion = aiMergeState?.suggestions.weatherConditions;
+  const temperatureSuggestion = isAiSuggested?.('temperature')
+    ? aiMergeState?.suggestions.temperature
+    : undefined;
+
+  const weatherConditionSuggestion = isAiSuggested?.('weatherConditions')
+    ? aiMergeState?.suggestions.weatherConditions
+    : undefined;
 
   const isTemperaturePending = temperatureSuggestion?.status === 'pending';
   const isWeatherPending = weatherConditionSuggestion?.status === 'pending';
@@ -106,7 +111,7 @@ export const WeatherSection = ({
               <FormItem>
                 <FormLabel className="flex items-center gap-2">
                   <span>{t('inspection:form.weather.temperature')}</span>
-                  {isAiSuggested?.('temperature') && <AiBadge />}
+                  {temperatureSuggestion && <AiBadge />}
                 </FormLabel>
 
                 <TemperatureField
@@ -118,24 +123,26 @@ export const WeatherSection = ({
                   onBlur={field.onBlur}
                 />
 
-                <AiSuggestionPreview
-                  label={t('inspection:form.weather.temperature')}
-                  currentValue={
-                    field.value !== null && field.value !== undefined
-                      ? `${field.value}°C`
-                      : null
-                  }
-                  suggestedValue={
-                    temperatureSuggestion?.aiValue !== null &&
-                    temperatureSuggestion?.aiValue !== undefined
-                      ? `${temperatureSuggestion.aiValue}°C`
-                      : null
-                  }
-                  hasConflict={temperatureSuggestion?.hasConflict}
-                  status={temperatureSuggestion?.status}
-                  onAccept={() => onAcceptSuggestion?.('temperature')}
-                  onDismiss={() => onDismissSuggestion?.('temperature')}
-                />
+                {temperatureSuggestion && (
+                  <AiSuggestionPreview
+                    label={t('inspection:form.weather.temperature')}
+                    currentValue={
+                      field.value !== null && field.value !== undefined
+                        ? `${field.value}°C`
+                        : null
+                    }
+                    suggestedValue={
+                      temperatureSuggestion.aiValue !== null &&
+                      temperatureSuggestion.aiValue !== undefined
+                        ? `${temperatureSuggestion.aiValue}°C`
+                        : null
+                    }
+                    hasConflict={temperatureSuggestion.hasConflict}
+                    status={temperatureSuggestion.status}
+                    onAccept={() => onAcceptSuggestion?.('temperature')}
+                    onDismiss={() => onDismissSuggestion?.('temperature')}
+                  />
+                )}
 
                 <FormMessage />
               </FormItem>
@@ -159,7 +166,7 @@ export const WeatherSection = ({
               <FormItem className="space-y-2">
                 <FormLabel className="flex items-center gap-2">
                   <span>{t('inspection:form.weather.condition')}</span>
-                  {isAiSuggested?.('weatherConditions') && <AiBadge />}
+                  {weatherConditionSuggestion && <AiBadge />}
                 </FormLabel>
 
                 <FormControl>
@@ -201,24 +208,27 @@ export const WeatherSection = ({
                   </div>
                 </FormControl>
 
-                <AiSuggestionPreview
-                  label={t('inspection:form.weather.condition')}
-                  currentValue={
-                    field.value
-                      ? weatherLabels[field.value] || field.value
-                      : null
-                  }
-                  suggestedValue={
-                    weatherConditionSuggestion?.aiValue
-                      ? weatherLabels[weatherConditionSuggestion.aiValue as string] ||
-                        (weatherConditionSuggestion.aiValue as string)
-                      : null
-                  }
-                  hasConflict={weatherConditionSuggestion?.hasConflict}
-                  status={weatherConditionSuggestion?.status}
-                  onAccept={() => onAcceptSuggestion?.('weatherConditions')}
-                  onDismiss={() => onDismissSuggestion?.('weatherConditions')}
-                />
+                {weatherConditionSuggestion && (
+                  <AiSuggestionPreview
+                    label={t('inspection:form.weather.condition')}
+                    currentValue={
+                      field.value
+                        ? weatherLabels[field.value] || field.value
+                        : null
+                    }
+                    suggestedValue={
+                      weatherConditionSuggestion.aiValue
+                        ? weatherLabels[
+                            weatherConditionSuggestion.aiValue as string
+                          ] || (weatherConditionSuggestion.aiValue as string)
+                        : null
+                    }
+                    hasConflict={weatherConditionSuggestion.hasConflict}
+                    status={weatherConditionSuggestion.status}
+                    onAccept={() => onAcceptSuggestion?.('weatherConditions')}
+                    onDismiss={() => onDismissSuggestion?.('weatherConditions')}
+                  />
+                )}
 
                 <FormMessage />
               </FormItem>

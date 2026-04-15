@@ -272,40 +272,34 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
   const queenCells = useWatch({ name: 'observations.queenCells', control });
   const currentObservations = useWatch({ name: 'observations', control });
 
-  const queenSeenSuggestion = aiMergeState?.suggestions['observations.queenSeen'];
-  const broodPatternSuggestion =
-    aiMergeState?.suggestions['observations.broodPattern'];
-  const strengthSuggestion = aiMergeState?.suggestions['observations.strength'];
-  const uncappedBroodSuggestion =
-    aiMergeState?.suggestions['observations.uncappedBrood'];
-  const cappedBroodSuggestion =
-    aiMergeState?.suggestions['observations.cappedBrood'];
-  const honeyStoresSuggestion =
-    aiMergeState?.suggestions['observations.honeyStores'];
-  const pollenStoresSuggestion =
-    aiMergeState?.suggestions['observations.pollenStores'];
-  const queenCellsSuggestion =
-    aiMergeState?.suggestions['observations.queenCells'];
-  const swarmCellsSuggestion =
-    aiMergeState?.suggestions['observations.swarmCells'];
-  const supersedureCellsSuggestion =
-    aiMergeState?.suggestions['observations.supersedureCells'];
-  const additionalSuggestion =
-    aiMergeState?.suggestions['observations.additionalObservations'];
-  const reminderSuggestion =
-    aiMergeState?.suggestions['observations.reminderObservations'];
+  const getObservationSuggestion = (
+    key: keyof NonNullable<InspectionFormData['observations']>,
+  ) => {
+    const fieldPath = `observations.${key}`;
+    return isAiSuggested?.(fieldPath) ? aiMergeState?.suggestions[fieldPath] : undefined;
+  };
+
+  const queenSeenSuggestion = getObservationSuggestion('queenSeen');
+  const broodPatternSuggestion = getObservationSuggestion('broodPattern');
+  const strengthSuggestion = getObservationSuggestion('strength');
+  const uncappedBroodSuggestion = getObservationSuggestion('uncappedBrood');
+  const cappedBroodSuggestion = getObservationSuggestion('cappedBrood');
+  const honeyStoresSuggestion = getObservationSuggestion('honeyStores');
+  const pollenStoresSuggestion = getObservationSuggestion('pollenStores');
+  const queenCellsSuggestion = getObservationSuggestion('queenCells');
+  const swarmCellsSuggestion = getObservationSuggestion('swarmCells');
+  const supersedureCellsSuggestion = getObservationSuggestion('supersedureCells');
+  const additionalSuggestion = getObservationSuggestion('additionalObservations');
+  const reminderSuggestion = getObservationSuggestion('reminderObservations');
 
   const dirtyObservationFields = (formState.dirtyFields.observations ??
     {}) as Partial<
     Record<keyof NonNullable<InspectionFormData['observations']>, unknown>
   >;
 
-  const getSuggestionAiValue = (field: string): unknown =>
-    aiMergeState?.suggestions[field]?.aiValue;
-
   const hasAiField = (
     key: keyof NonNullable<InspectionFormData['observations']>,
-  ) => getSuggestionAiValue(`observations.${key}`) !== undefined;
+  ) => Boolean(getObservationSuggestion(key));
 
   const shouldPrefillField = (
     key: keyof NonNullable<InspectionFormData['observations']>,
@@ -315,31 +309,46 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
     shouldUseAiPrefill(
       currentValue,
       !!dirtyObservationFields[key],
-      aiMergeState?.suggestions[`observations.${key}`],
+      getObservationSuggestion(key),
     );
 
   const shouldPrefillNumericField = (
     key: keyof NonNullable<InspectionFormData['observations']>,
     currentValue: unknown,
   ) => {
-    const suggestion = aiMergeState?.suggestions[`observations.${key}`];
+    const suggestion = getObservationSuggestion(key);
     const aiValue = suggestion?.aiValue;
 
-    if (!hasAiField(key)) return false;
-    if (suggestion?.status !== 'pending') return false;
+    if (!suggestion) return false;
+    if (suggestion.status !== 'pending') return false;
     if (dirtyObservationFields[key]) return false;
     if (toNumericValue(aiValue) === undefined) return false;
 
     return currentValue === null || currentValue === undefined;
   };
 
+  const hasAnyObservationSuggestion = [
+    'queenSeen',
+    'broodPattern',
+    'strength',
+    'uncappedBrood',
+    'cappedBrood',
+    'honeyStores',
+    'pollenStores',
+    'queenCells',
+    'swarmCells',
+    'supersedureCells',
+    'additionalObservations',
+    'reminderObservations',
+  ].some(key =>
+    isAiSuggested?.(`observations.${key}`),
+  );
+
   return (
     <div
       className={cn(
         'space-y-4 rounded-md p-3 transition-colors',
-        Object.keys(aiMergeState?.suggestions ?? {}).some(key =>
-          key.startsWith('observations.'),
-        ) &&
+        hasAnyObservationSuggestion &&
           'border border-blue-200 bg-blue-50/20 dark:border-blue-900 dark:bg-blue-950/10',
       )}
       data-ai-field="observations"
@@ -347,9 +356,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
       <div className="flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-lg font-medium">
           <span>{t('observations.title')}</span>
-          {Object.keys(aiMergeState?.suggestions ?? {}).some(key =>
-            key.startsWith('observations.'),
-          ) && <AiBadge />}
+          {hasAnyObservationSuggestion && <AiBadge />}
         </h3>
       </div>
 
@@ -368,7 +375,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
               <FormItem
                 className={cn(
                   'flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow transition-colors',
-                  hasAiField('queenSeen') &&
+                  queenSeenSuggestion &&
                     'border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
                 )}
               >
@@ -382,7 +389,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                 <div className="min-w-0 flex-1 space-y-2">
                   <FormLabel className="flex items-center gap-2">
                     <span>{t('observations.queenSeen')}</span>
-                    {isAiSuggested?.('observations.queenSeen') && <AiBadge />}
+                    {queenSeenSuggestion && <AiBadge />}
                   </FormLabel>
 
                   <AiValuePreview
@@ -415,13 +422,13 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
           <ObservationItem
             name="observations.strength"
             label={t('observations.strength')}
-            showAi={hasAiField('strength')}
+            showAi={Boolean(strengthSuggestion)}
             aiValue={strengthSuggestion?.aiValue}
             useAiPrefill={shouldPrefillNumericField(
               'strength',
               currentObservations?.strength,
             )}
-            suggestionField="observations.strength"
+            suggestionField={strengthSuggestion ? 'observations.strength' : undefined}
             suggestionStatus={strengthSuggestion?.status}
             suggestionConflict={strengthSuggestion?.hasConflict}
             onAcceptSuggestion={onAcceptSuggestion}
@@ -431,13 +438,13 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
           <ObservationItem
             name="observations.cappedBrood"
             label={t('observations.cappedBrood')}
-            showAi={hasAiField('cappedBrood')}
+            showAi={Boolean(cappedBroodSuggestion)}
             aiValue={cappedBroodSuggestion?.aiValue}
             useAiPrefill={shouldPrefillNumericField(
               'cappedBrood',
               currentObservations?.cappedBrood,
             )}
-            suggestionField="observations.cappedBrood"
+            suggestionField={cappedBroodSuggestion ? 'observations.cappedBrood' : undefined}
             suggestionStatus={cappedBroodSuggestion?.status}
             suggestionConflict={cappedBroodSuggestion?.hasConflict}
             onAcceptSuggestion={onAcceptSuggestion}
@@ -447,13 +454,13 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
           <ObservationItem
             name="observations.uncappedBrood"
             label={t('observations.uncappedBrood')}
-            showAi={hasAiField('uncappedBrood')}
+            showAi={Boolean(uncappedBroodSuggestion)}
             aiValue={uncappedBroodSuggestion?.aiValue}
             useAiPrefill={shouldPrefillNumericField(
               'uncappedBrood',
               currentObservations?.uncappedBrood,
             )}
-            suggestionField="observations.uncappedBrood"
+            suggestionField={uncappedBroodSuggestion ? 'observations.uncappedBrood' : undefined}
             suggestionStatus={uncappedBroodSuggestion?.status}
             suggestionConflict={uncappedBroodSuggestion?.hasConflict}
             onAcceptSuggestion={onAcceptSuggestion}
@@ -463,7 +470,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
           <div
             className={cn(
               'mt-4 rounded-md p-2 transition-colors',
-              hasAiField('broodPattern') &&
+              broodPatternSuggestion &&
                 'border border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
             )}
           >
@@ -502,9 +509,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                     <div className="mb-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                       <FormLabel className="flex items-center gap-2 text-sm font-medium">
                         <span>{t('observations.broodPattern')}</span>
-                        {isAiSuggested?.('observations.broodPattern') && (
-                          <AiBadge />
-                        )}
+                        {broodPatternSuggestion && <AiBadge />}
                       </FormLabel>
 
                       <AiValuePreview
@@ -539,7 +544,8 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                               displayValue === option
                                 ? 'border-green-300 bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-900/30 dark:text-green-300'
                                 : 'border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700',
-                              isAiRecommended &&
+                              broodPatternSuggestion &&
+                                isAiRecommended &&
                                 'ring-2 ring-blue-300 dark:ring-blue-700',
                             )}
                             onClick={() => selectPattern(option)}
@@ -550,7 +556,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                                   `observations.broodPatternOptions.${option}`,
                                 )}
                               </span>
-                              {isAiRecommended && <AiBadge />}
+                              {broodPatternSuggestion && isAiRecommended && <AiBadge />}
                             </div>
                           </div>
                         );
@@ -566,13 +572,13 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
           <ObservationItem
             name="observations.honeyStores"
             label={t('observations.honeyStores')}
-            showAi={hasAiField('honeyStores')}
+            showAi={Boolean(honeyStoresSuggestion)}
             aiValue={honeyStoresSuggestion?.aiValue}
             useAiPrefill={shouldPrefillNumericField(
               'honeyStores',
               currentObservations?.honeyStores,
             )}
-            suggestionField="observations.honeyStores"
+            suggestionField={honeyStoresSuggestion ? 'observations.honeyStores' : undefined}
             suggestionStatus={honeyStoresSuggestion?.status}
             suggestionConflict={honeyStoresSuggestion?.hasConflict}
             onAcceptSuggestion={onAcceptSuggestion}
@@ -582,13 +588,13 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
           <ObservationItem
             name="observations.pollenStores"
             label={t('observations.pollenStores')}
-            showAi={hasAiField('pollenStores')}
+            showAi={Boolean(pollenStoresSuggestion)}
             aiValue={pollenStoresSuggestion?.aiValue}
             useAiPrefill={shouldPrefillNumericField(
               'pollenStores',
               currentObservations?.pollenStores,
             )}
-            suggestionField="observations.pollenStores"
+            suggestionField={pollenStoresSuggestion ? 'observations.pollenStores' : undefined}
             suggestionStatus={pollenStoresSuggestion?.status}
             suggestionConflict={pollenStoresSuggestion?.hasConflict}
             onAcceptSuggestion={onAcceptSuggestion}
@@ -598,13 +604,13 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
           <ObservationItem
             name="observations.queenCells"
             label={t('observations.queenCells')}
-            showAi={hasAiField('queenCells')}
+            showAi={Boolean(queenCellsSuggestion)}
             aiValue={queenCellsSuggestion?.aiValue}
             useAiPrefill={shouldPrefillNumericField(
               'queenCells',
               currentObservations?.queenCells,
             )}
-            suggestionField="observations.queenCells"
+            suggestionField={queenCellsSuggestion ? 'observations.queenCells' : undefined}
             suggestionStatus={queenCellsSuggestion?.status}
             suggestionConflict={queenCellsSuggestion?.hasConflict}
             onAcceptSuggestion={onAcceptSuggestion}
@@ -630,7 +636,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                     <FormItem
                       className={cn(
                         'flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 shadow transition-colors',
-                        hasAiField('swarmCells') &&
+                        swarmCellsSuggestion &&
                           'border border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
                       )}
                     >
@@ -644,9 +650,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                       <div className="min-w-0 flex-1 space-y-2">
                         <FormLabel className="flex items-center gap-2">
                           <span>{t('observations.swarmCells')}</span>
-                          {isAiSuggested?.('observations.swarmCells') && (
-                            <AiBadge />
-                          )}
+                          {swarmCellsSuggestion && <AiBadge />}
                         </FormLabel>
 
                         <AiValuePreview
@@ -692,7 +696,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                     <FormItem
                       className={cn(
                         'flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 shadow transition-colors',
-                        hasAiField('supersedureCells') &&
+                        supersedureCellsSuggestion &&
                           'border border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
                       )}
                     >
@@ -706,9 +710,7 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                       <div className="min-w-0 flex-1 space-y-2">
                         <FormLabel className="flex items-center gap-2">
                           <span>{t('observations.supersedureCells')}</span>
-                          {isAiSuggested?.(
-                            'observations.supersedureCells',
-                          ) && <AiBadge />}
+                          {supersedureCellsSuggestion && <AiBadge />}
                         </FormLabel>
 
                         <AiValuePreview
@@ -746,16 +748,14 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
           <div
             className={cn(
               'mt-6 rounded-md p-2 transition-colors',
-              hasAiField('additionalObservations') &&
+              additionalSuggestion &&
                 'border border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
             )}
           >
             <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <h4 className="flex items-center gap-2 text-md font-medium">
                 <span>{t('observations.additionalObservations')}</span>
-                {isAiSuggested?.('observations.additionalObservations') && (
-                  <AiBadge />
-                )}
+                {additionalSuggestion && <AiBadge />}
               </h4>
 
               <AiValuePreview
@@ -827,7 +827,8 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                   <FormItem>
                     <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
                       {availableOptions.map(option => {
-                        const isAiRecommended = aiValues.includes(option);
+                        const isAiRecommended =
+                          additionalSuggestion && aiValues.includes(option);
 
                         return (
                           <div
@@ -862,16 +863,14 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
           <div
             className={cn(
               'mt-6 rounded-md p-2 transition-colors',
-              hasAiField('reminderObservations') &&
+              reminderSuggestion &&
                 'border border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
             )}
           >
             <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <h4 className="flex items-center gap-2 text-md font-medium">
                 <span>{t('observations.reminderObservations')}</span>
-                {isAiSuggested?.('observations.reminderObservations') && (
-                  <AiBadge />
-                )}
+                {reminderSuggestion && <AiBadge />}
               </h4>
 
               <AiValuePreview
@@ -938,7 +937,8 @@ export const ObservationsSection: React.FC<ObservationsSectionProps> = ({
                   <FormItem>
                     <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
                       {availableOptions.map(option => {
-                        const isAiRecommended = aiValues.includes(option);
+                        const isAiRecommended =
+                          reminderSuggestion && aiValues.includes(option);
 
                         return (
                           <div
