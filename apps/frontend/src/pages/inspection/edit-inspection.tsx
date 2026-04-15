@@ -22,8 +22,7 @@ function isMeaningfulValue(value: unknown): boolean {
   if (typeof value === 'string') return value.trim() !== '';
   if (Array.isArray(value)) return value.length > 0;
 
-  // Important:
-  // false and 0 are valid AI suggestions, so they must count as meaningful.
+  // Keep false and 0 as valid suggestions.
   return true;
 }
 
