@@ -45,8 +45,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { AudioSection } from './audio-section';
 import { PhotosSection, PendingPhoto } from './photos-section';
-import { uploadPendingPhotos } from './upload-pending-photos';
-import { uploadPendingRecordings } from './upload-pending-recordings';
 import { ScorePreviewSection } from './score-preview';
 import {
   buildAiMergeState,
@@ -468,12 +466,14 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
                     </PopoverContent>
                   </Popover>
 
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="mt-1 flex items-center gap-2">
                     <InspectionDateTimePicker
                       date={field.value ?? new Date()}
                       isAllDay={isAllDay}
                       onDateChange={field.onChange}
-                      onIsAllDayChange={checked => form.setValue('isAllDay', checked)}
+                      onIsAllDayChange={checked =>
+                        form.setValue('isAllDay', checked)
+                      }
                     />
                   </div>
 
@@ -503,12 +503,13 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
                 onPendingRecordingsChange={setPendingRecordings}
               />
 
-              <hr className={'border-t border-border'} />
+              <hr className="border-t border-border" />
               <PhotosSection
                 inspectionId={inspectionId}
                 pendingPhotos={pendingPhotos}
                 onPendingPhotosChange={setPendingPhotos}
               />
+
               <hr className="border-t border-border" />
               <WeatherSection
                 isAiSuggested={isAiSuggested}
