@@ -6,8 +6,13 @@ import tempfile
 
 import requests
 from faster_whisper import WhisperModel
-from flask import Flask, jsonify, request
+from flask import Flask, abort, jsonify, request
 
+# This service is designed as a stateless API.
+# Authentication is performed with a Bearer token in the Authorization header,
+# not with browser cookies or Flask session auth.
+# Because browsers do not automatically attach this header cross-site the way
+# they do with cookies, classic CSRF protection is not used here.
 app = Flask(__name__)
 AI_API_KEY = os.environ.get("AI_API_KEY", "")
 
@@ -239,7 +244,6 @@ def require_api_key(req):
     expected = f"Bearer {AI_API_KEY}"
 
     if auth != expected:
-        from flask import abort
         abort(401, description="Unauthorized")
 
 
@@ -830,6 +834,8 @@ def health():
 
 @app.post("/transcribe")
 def transcribe_endpoint():
+    require_api_key(request)
+
     data = request.get_json(force=True)
     audio_path = data["audio_path"]
     result = transcribe_file(audio_path)
@@ -838,6 +844,8 @@ def transcribe_endpoint():
 
 @app.post("/recommend")
 def recommend_endpoint():
+    require_api_key(request)
+
     data = request.get_json(force=True)
     transcript = data["transcript"]
     trimmed_transcript = truncate_transcript(transcript)
@@ -850,6 +858,8 @@ def recommend_endpoint():
 
 @app.post("/process")
 def process_endpoint():
+    require_api_key(request)
+
     data = request.get_json(force=True)
     audio_path = data["audio_path"]
     result = process_audio_file(audio_path)
@@ -858,6 +868,8 @@ def process_endpoint():
 
 @app.post("/process_incoming")
 def process_incoming():
+    require_api_key(request)
+
     processed = []
 
     for item in sorted(AUDIO_INPUT_DIR.iterdir()):

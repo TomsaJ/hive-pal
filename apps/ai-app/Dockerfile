@@ -11,10 +11,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN groupadd --system appgroup && useradd --system --gid appgroup --create-home appuser
 
-COPY . .
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+COPY app.py /app/app.py
+
+RUN mkdir -p /data/incoming /data/transcripts /data/processed \
+    && chown -R appuser:appgroup /app /data
+
+USER appuser
 
 EXPOSE 8008
 
