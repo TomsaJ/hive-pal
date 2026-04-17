@@ -87,6 +87,21 @@ const formatActionTypeLabel = (
   }
 };
 
+const getActionRecord = (action: unknown): Record<string, unknown> | null => {
+  return action && typeof action === 'object'
+    ? (action as Record<string, unknown>)
+    : null;
+};
+
+const getActionType = (action: unknown): string => {
+  const record = getActionRecord(action);
+  return typeof record?.type === 'string' ? record.type : 'UNKNOWN';
+};
+
+const getActionKey = (action: unknown, index: number): string => {
+  return `${getActionType(action)}-${index}`;
+};
+
 const formatActionsPreview = (
   value: unknown,
   t: ReturnType<typeof useTranslation>['t'],
@@ -98,10 +113,12 @@ const formatActionsPreview = (
   return (
     <div className="space-y-2">
       {value.map((action, index) => {
-        if (!action || typeof action !== 'object') {
+        const typedAction = getActionRecord(action);
+
+        if (!typedAction) {
           return (
             <div
-              key={index}
+              key={`invalid-${index}`}
               className="rounded border bg-muted/20 p-2 text-xs text-muted-foreground"
             >
               Invalid action
@@ -109,13 +126,11 @@ const formatActionsPreview = (
           );
         }
 
-        const typedAction = action as Record<string, unknown>;
-        const actionType =
-          typeof typedAction.type === 'string' ? typedAction.type : 'UNKNOWN';
+        const actionType = getActionType(action);
 
         return (
           <div
-            key={`${actionType}-${index}`}
+            key={getActionKey(action, index)}
             className="rounded border bg-muted/20 p-2 text-sm"
           >
             <div className="font-medium">
@@ -138,8 +153,7 @@ const PendingAiActionCard = ({
   action: Record<string, unknown>;
   t: ReturnType<typeof useTranslation>['t'];
 }) => {
-  const actionType =
-    typeof action.type === 'string' ? action.type : 'UNKNOWN';
+  const actionType = getActionType(action);
 
   return (
     <div className="rounded-md border border-blue-200 bg-blue-50/40 p-3 dark:border-blue-900 dark:bg-blue-950/20">
@@ -196,8 +210,8 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
       .map(action => action.type)
       .filter((type): type is string => typeof type === 'string'),
     ...previewActions
-      .map(action => action.type)
-      .filter((type): type is string => typeof type === 'string'),
+      .map(action => getActionType(action))
+      .filter(type => type !== 'UNKNOWN'),
   ]);
 
   const handleSave = useCallback(
@@ -383,7 +397,7 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
         <div className="mt-4 space-y-3">
           {previewActions.map((action, index) => (
             <PendingAiActionCard
-              key={`ai-preview-${String(action.type ?? index)}-${index}`}
+              key={`ai-preview-${getActionKey(action, index)}`}
               action={action}
               t={t}
             />

@@ -35,11 +35,13 @@ export class AiService {
   ) {}
 
   async analyzeInspectionAudio(
-  inspectionId: string,
-  audioId: string,
-): Promise<AiProcessUploadResponse> {
+    inspectionId: string,
+    audioId: string,
+  ): Promise<AiProcessUploadResponse> {
     const enabled = this.config.get<string>('AI_ENABLED') === 'true';
-    if (!enabled) throw new BadRequestException('AI is disabled');
+    if (!enabled) {
+      throw new BadRequestException('AI is disabled');
+    }
 
     const audio = await this.prisma.inspectionAudio.findFirst({
       where: { id: audioId, inspectionId },
@@ -49,7 +51,10 @@ export class AiService {
       throw new NotFoundException('Audio not found');
     }
 
-    const downloadUrl = await this.storage.generateDownloadUrl(audio.storageKey, 900);
+    const downloadUrl = await this.storage.generateDownloadUrl(
+      audio.storageKey,
+      900,
+    );
 
     const audioResponse = await axios.get(downloadUrl, {
       responseType: 'arraybuffer',
@@ -86,7 +91,5 @@ export class AiService {
     });
 
     return aiResponse;
-
-    return result.data;
   }
 }

@@ -61,6 +61,14 @@ type WeatherSectionProps = {
   onDismissSuggestion?: (field: keyof InspectionFormData) => void;
 };
 
+const getNumericTemperature = (value: unknown): number | null => {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+};
+
+const getWeatherConditionValue = (value: unknown): string | null => {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+};
+
 export const WeatherSection = ({
   isAiSuggested,
   aiMergeState,
@@ -84,6 +92,11 @@ export const WeatherSection = ({
   const weatherConditionSuggestion = isAiSuggested?.('weatherConditions')
     ? aiMergeState?.suggestions.weatherConditions
     : undefined;
+
+  const suggestedTemperature = getNumericTemperature(temperatureSuggestion?.aiValue);
+  const suggestedWeatherCondition = getWeatherConditionValue(
+    weatherConditionSuggestion?.aiValue,
+  );
 
   const isTemperaturePending = temperatureSuggestion?.status === 'pending';
   const isWeatherPending = weatherConditionSuggestion?.status === 'pending';
@@ -132,9 +145,8 @@ export const WeatherSection = ({
                         : null
                     }
                     suggestedValue={
-                      temperatureSuggestion.aiValue !== null &&
-                      temperatureSuggestion.aiValue !== undefined
-                        ? `${temperatureSuggestion.aiValue}°C`
+                      suggestedTemperature !== null
+                        ? `${suggestedTemperature}°C`
                         : null
                     }
                     hasConflict={temperatureSuggestion.hasConflict}
@@ -175,8 +187,7 @@ export const WeatherSection = ({
                       const Icon = condition.icon;
                       const isSelected = field.value === condition.id;
                       const isAiRecommended =
-                        isWeatherPending &&
-                        weatherConditionSuggestion?.aiValue === condition.id;
+                        isWeatherPending && suggestedWeatherCondition === condition.id;
 
                       return (
                         <button
@@ -217,10 +228,9 @@ export const WeatherSection = ({
                         : null
                     }
                     suggestedValue={
-                      weatherConditionSuggestion.aiValue
-                        ? weatherLabels[
-                            weatherConditionSuggestion.aiValue as string
-                          ] || (weatherConditionSuggestion.aiValue as string)
+                      suggestedWeatherCondition
+                        ? weatherLabels[suggestedWeatherCondition] ||
+                          suggestedWeatherCondition
                         : null
                     }
                     hasConflict={weatherConditionSuggestion.hasConflict}

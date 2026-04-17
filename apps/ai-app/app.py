@@ -3,9 +3,10 @@ import os
 import pathlib
 import time
 import tempfile
-from flask import Flask, jsonify, request
-from faster_whisper import WhisperModel
+
 import requests
+from faster_whisper import WhisperModel
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 AI_API_KEY = os.environ.get("AI_API_KEY", "")
@@ -22,7 +23,15 @@ OUTPUT_DIR = pathlib.Path(os.environ.get("OUTPUT_DIR", "/data/processed"))
 MAX_TRANSCRIPT_CHARS = int(os.environ.get("MAX_TRANSCRIPT_CHARS", "12000"))
 
 SUPPORTED_EXTENSIONS = {
-    ".wav", ".mp3", ".m4a", ".flac", ".ogg", ".mp4", ".mpeg", ".mpga", ".webm"
+    ".wav",
+    ".mp3",
+    ".m4a",
+    ".flac",
+    ".ogg",
+    ".mp4",
+    ".mpeg",
+    ".mpga",
+    ".webm",
 }
 
 for folder in [AUDIO_INPUT_DIR, TRANSCRIPTS_DIR, OUTPUT_DIR]:
@@ -42,7 +51,10 @@ SCHEMA = {
         },
         "date": {
             "type": ["string", "null"],
-            "description": "ISO 8601 datetime string if the transcript clearly states the inspection date/time; otherwise null"
+            "description": (
+                "ISO 8601 datetime string if the transcript clearly states "
+                "the inspection date/time; otherwise null"
+            ),
         },
         "temperature": {
             "type": ["number", "null"]
@@ -67,7 +79,7 @@ SCHEMA = {
                 "queenSeen": {"type": ["boolean", "null"]},
                 "broodPattern": {
                     "type": ["string", "null"],
-                    "enum": ["solid", "spotty", "scattered", "patchy", "excellent", "poor", None]
+                    "enum": ["solid", "spotty", "scattered", "patchy", "excellent", "poor", None],
                 },
                 "additionalObservations": {
                     "type": "array",
@@ -85,9 +97,9 @@ SCHEMA = {
                             "healthy",
                             "active",
                             "sluggish",
-                            "thriving"
-                        ]
-                    }
+                            "thriving",
+                        ],
+                    },
                 },
                 "reminderObservations": {
                     "type": "array",
@@ -100,10 +112,10 @@ SCHEMA = {
                             "queen_issues",
                             "requires_treatment",
                             "low_stores",
-                            "prepare_for_winter"
-                        ]
-                    }
-                }
+                            "prepare_for_winter",
+                        ],
+                    },
+                },
             },
             "required": [
                 "strength",
@@ -117,8 +129,8 @@ SCHEMA = {
                 "queenSeen",
                 "broodPattern",
                 "additionalObservations",
-                "reminderObservations"
-            ]
+                "reminderObservations",
+            ],
         },
         "actions": {
             "type": "array",
@@ -133,8 +145,8 @@ SCHEMA = {
                             "FRAME",
                             "MAINTENANCE",
                             "NOTE",
-                            "OTHER"
-                        ]
+                            "OTHER",
+                        ],
                     },
                     "notes": {
                         "type": ["string", "null"]
@@ -150,8 +162,8 @@ SCHEMA = {
                                     "FRAME",
                                     "MAINTENANCE",
                                     "NOTE",
-                                    "OTHER"
-                                ]
+                                    "OTHER",
+                                ],
                             },
                             "feedType": {"type": ["string", "null"]},
                             "amount": {"type": ["number", "null"]},
@@ -162,20 +174,20 @@ SCHEMA = {
                             "duration": {"type": ["string", "null"]},
                             "component": {
                                 "type": ["string", "null"],
-                                "enum": ["BOX", "BOTTOM_BOARD", "COVER", None]
+                                "enum": ["BOX", "BOTTOM_BOARD", "COVER", None],
                             },
                             "status": {
                                 "type": ["string", "null"],
-                                "enum": ["CLEANED", "REPLACED", None]
+                                "enum": ["CLEANED", "REPLACED", None],
                             },
-                            "content": {"type": ["string", "null"]}
+                            "content": {"type": ["string", "null"]},
                         },
-                        "required": ["type"]
-                    }
+                        "required": ["type"],
+                    },
                 },
-                "required": ["type", "details"]
-            }
-        }
+                "required": ["type", "details"],
+            },
+        },
     },
     "required": [
         "hiveId",
@@ -184,8 +196,8 @@ SCHEMA = {
         "weatherConditions",
         "notes",
         "observations",
-        "actions"
-    ]
+        "actions",
+    ],
 }
 
 
@@ -222,8 +234,10 @@ def truncate_transcript(text: str, max_chars: int = MAX_TRANSCRIPT_CHARS) -> str
 def require_api_key(req):
     if not AI_API_KEY:
         return
+
     auth = req.headers.get("Authorization", "")
     expected = f"Bearer {AI_API_KEY}"
+
     if auth != expected:
         from flask import abort
         abort(401, description="Unauthorized")
@@ -244,7 +258,7 @@ def transcribe_file(audio_path: str):
         segment_list.append({
             "start": seg.start,
             "end": seg.end,
-            "text": text
+            "text": text,
         })
         if text:
             full_text_parts.append(text)
@@ -576,14 +590,28 @@ def normalize_recommendation(data: dict) -> dict:
     }
 
     valid_additional = {
-        "calm", "defensive", "aggressive", "nervous",
-        "varroa_present", "small_hive_beetle", "wax_moths", "ants_present",
-        "healthy", "active", "sluggish", "thriving"
+        "calm",
+        "defensive",
+        "aggressive",
+        "nervous",
+        "varroa_present",
+        "small_hive_beetle",
+        "wax_moths",
+        "ants_present",
+        "healthy",
+        "active",
+        "sluggish",
+        "thriving",
     }
 
     valid_reminders = {
-        "honey_bound", "overcrowded", "needs_super", "queen_issues",
-        "requires_treatment", "low_stores", "prepare_for_winter"
+        "honey_bound",
+        "overcrowded",
+        "needs_super",
+        "queen_issues",
+        "requires_treatment",
+        "low_stores",
+        "prepare_for_winter",
     }
 
     normalized = {
@@ -629,7 +657,6 @@ def normalize_recommendation(data: dict) -> dict:
 
 def map_ai_to_form_draft(ai: dict) -> dict:
     draft = empty_form_draft()
-
     observations = ai.get("observations") or {}
 
     draft["temperature"] = ai.get("temperature")
@@ -667,15 +694,15 @@ def recommend_from_transcript(transcript: str):
         "messages": [
             {
                 "role": "system",
-                "content": "Return only JSON that exactly matches the provided inspection schema."
+                "content": "Return only JSON that exactly matches the provided inspection schema.",
             },
             {
                 "role": "user",
-                "content": build_prompt(transcript)
-            }
+                "content": build_prompt(transcript),
+            },
         ],
         "stream": False,
-        "format": SCHEMA
+        "format": SCHEMA,
     }
 
     last_error = None
@@ -714,11 +741,11 @@ def save_outputs(base_name: str, transcription: dict, recommendation: dict):
     transcript_path.write_text(transcription["text"], encoding="utf-8")
     transcript_json_path.write_text(
         json.dumps(transcription, ensure_ascii=False, indent=2),
-        encoding="utf-8"
+        encoding="utf-8",
     )
     result_json_path.write_text(
         json.dumps(recommendation, ensure_ascii=False, indent=2),
-        encoding="utf-8"
+        encoding="utf-8",
     )
 
     return {
@@ -737,10 +764,8 @@ def process_audio_file(audio_path: str):
     analysis_error = None
     try:
         trimmed_transcript = truncate_transcript(transcription["text"])
-
         ai_result = recommend_from_transcript(trimmed_transcript)
         recommendation = map_ai_to_form_draft(ai_result)
-
     except Exception as exc:
         analysis_error = str(exc)
         app.logger.exception("Recommendation generation failed")
@@ -856,4 +881,7 @@ def process_incoming():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8008)
+    app.run(
+        host=os.environ.get("FLASK_RUN_HOST", "127.0.0.1"),
+        port=int(os.environ.get("PORT", "8008")),
+    )

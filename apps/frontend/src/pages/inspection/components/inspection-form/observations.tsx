@@ -33,10 +33,22 @@ type ObservationItemProps<TName extends FieldPath<InspectionFormData>> = {
 
 const formatPreviewValue = (value: unknown): string => {
   if (value === null || value === undefined) return '—';
-  if (Array.isArray(value)) return value.length ? value.join(', ') : '—';
+  if (Array.isArray(value)) {
+    return value
+      .filter((item): item is string | number | boolean => {
+        return (
+          typeof item === 'string' ||
+          typeof item === 'number' ||
+          typeof item === 'boolean'
+        );
+      })
+      .map(item => (typeof item === 'boolean' ? (item ? 'Yes' : 'No') : String(item)))
+      .join(', ') || '—';
+  }
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-  if (value === '') return '—';
-  return String(value);
+  if (typeof value === 'string') return value === '' ? '—' : value;
+  if (typeof value === 'number') return String(value);
+  return '—';
 };
 
 const toNumericValue = (value: unknown): number | undefined => {
