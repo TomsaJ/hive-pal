@@ -58,15 +58,28 @@ export class LocalStorageService
     );
   }
   // eslint-disable-next-line @typescript-eslint/require-await
-  async generateDownloadUrl(
-    key: string,
-    expiresIn: number = 3600,
-  ): Promise<string> {
-    const expires = Math.floor(Date.now() / 1000) + expiresIn;
-    const token = this.signToken(key, expires);
-    const encodedKey = encodeURIComponent(key);
-    return `/api/storage/files/${encodedKey}?token=${token}&expires=${expires}`;
+
+generateDownloadUrl(
+  key: string,
+  expiresIn: number = 3600,
+): Promise<string> {
+  const expires = Math.floor(Date.now() / 1000) + expiresIn;
+  const token = this.signToken(key, expires);
+  const encodedKey = encodeURIComponent(key);
+
+  const backendPublicUrl =
+    this.configService.get<string>('BACKEND_PUBLIC_URL') || '';
+
+  const relativePath = `/api/storage/files/${encodedKey}?token=${token}&expires=${expires}`;
+
+  if (!backendPublicUrl) {
+    return Promise.resolve(relativePath);
   }
+
+  return Promise.resolve(
+    `${backendPublicUrl.replace(/\/$/, '')}${relativePath}`,
+  );
+}
 
   async deleteObject(key: string): Promise<void> {
     const filePath = this.getFilePath(key);

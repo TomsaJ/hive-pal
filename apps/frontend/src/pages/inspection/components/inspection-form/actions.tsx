@@ -30,6 +30,11 @@ import { Button } from '@/components/ui/button';
 import { TEST_SELECTORS } from '@/utils/test-selectors.ts';
 import { useFormContext } from 'react-hook-form';
 import { ActionData, InspectionFormData } from './schema.ts';
+import { AiBadge } from './ai-badge';
+import { AiSectionPreview } from './ai-section-preview';
+import type { AiMergeState } from '@/pages/inspection/lib/inspection-ai-merge';
+import { cn } from '@/lib/utils';
+import { shouldUseAiPrefill } from '@/pages/inspection/lib/inspection-ai-merge';
 
 const actionTypes = [
   { id: 'FEEDING', label: 'Feeding', Icon: Droplet },
@@ -54,26 +59,160 @@ export type ActionType =
 
 interface ActionsSectionProps {
   editMode?: boolean;
+  isAiSuggested?: (field: keyof InspectionFormData) => boolean;
+  aiMergeState?: AiMergeState | null;
+  onAcceptSuggestion?: (field: keyof InspectionFormData) => void;
+  onDismissSuggestion?: (field: keyof InspectionFormData) => void;
 }
+
+const formatActionTypeLabel = (
+  type: string,
+  t: ReturnType<typeof useTranslation>['t'],
+) => {
+  switch (type) {
+    case 'FEEDING':
+      return t('inspection:form.actions.feeding');
+    case 'TREATMENT':
+      return t('inspection:form.actions.treatment');
+    case 'FRAME':
+      return t('inspection:form.actions.frames');
+    case 'MAINTENANCE':
+      return t('inspection:form.actions.maintenance');
+    case 'NOTE':
+      return t('inspection:form.actions.note');
+    case 'OTHER':
+      return t('inspection:form.actions.other', 'Other');
+    default:
+      return type;
+  }
+};
+
+const getActionRecord = (action: unknown): Record<string, unknown> | null => {
+  return action && typeof action === 'object'
+    ? (action as Record<string, unknown>)
+    : null;
+};
+
+const getActionType = (action: unknown): string => {
+  const record = getActionRecord(action);
+  return typeof record?.type === 'string' ? record.type : 'UNKNOWN';
+};
+
+const getActionKey = (action: unknown, index: number): string => {
+  return `${getActionType(action)}-${index}`;
+};
+
+const formatActionsPreview = (
+  value: unknown,
+  t: ReturnType<typeof useTranslation>['t'],
+): ReactNode => {
+  if (!Array.isArray(value) || value.length === 0) {
+    return <span className="italic text-muted-foreground">No actions</span>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {value.map((action, index) => {
+        const typedAction = getActionRecord(action);
+
+        if (!typedAction) {
+          return (
+            <div
+              key={`invalid-${index}`}
+              className="rounded border bg-muted/20 p-2 text-xs text-muted-foreground"
+            >
+              Invalid action
+            </div>
+          );
+        }
+
+        const actionType = getActionType(action);
+
+        return (
+          <div
+            key={getActionKey(action, index)}
+            className="rounded border bg-muted/20 p-2 text-sm"
+          >
+            <div className="font-medium">
+              {formatActionTypeLabel(actionType, t)}
+            </div>
+            <pre className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">
+              {JSON.stringify(action, null, 2)}
+            </pre>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const PendingAiActionCard = ({
+  action,
+  t,
+}: {
+  action: Record<string, unknown>;
+  t: ReturnType<typeof useTranslation>['t'];
+}) => {
+  const actionType = getActionType(action);
+
+  return (
+    <div className="rounded-md border border-blue-200 bg-blue-50/40 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="font-medium">
+          {formatActionTypeLabel(actionType, t)}
+        </span>
+        <AiBadge />
+      </div>
+      <pre className="whitespace-pre-wrap break-words text-xs text-muted-foreground">
+        {JSON.stringify(action, null, 2)}
+      </pre>
+    </div>
+  );
+};
 
 export const ActionsSection: React.FC<ActionsSectionProps> = ({
   editMode = false,
+  isAiSuggested,
+  aiMergeState,
+  onAcceptSuggestion,
+  onDismissSuggestion,
 }) => {
   const { t } = useTranslation('inspection');
   const { setValue, getValues, watch, formState } =
     useFormContext<InspectionFormData>();
 
   const actionLabels: Record<string, string> = {
-    'FEEDING': t('inspection:form.actions.feeding'),
-    'TREATMENT': t('inspection:form.actions.treatment'),
-    'FRAME': t('inspection:form.actions.frames'),
-    'MAINTENANCE': t('inspection:form.actions.maintenance'),
-    'NOTE': t('inspection:form.actions.note'),
+    FEEDING: t('inspection:form.actions.feeding'),
+    TREATMENT: t('inspection:form.actions.treatment'),
+    FRAME: t('inspection:form.actions.frames'),
+    MAINTENANCE: t('inspection:form.actions.maintenance'),
+    NOTE: t('inspection:form.actions.note'),
   };
+
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
 
-  // Watch for changes to the actions array in the form
   const formActions = watch('actions') || [];
+  const actionsSuggestion = isAiSuggested?.('actions')
+    ? aiMergeState?.suggestions.actions
+    : undefined;
+  const isPending = actionsSuggestion?.status === 'pending';
+  const isDirty = Boolean(formState.dirtyFields.actions);
+
+  const previewActions =
+    actionsSuggestion &&
+    shouldUseAiPrefill(formActions, isDirty, actionsSuggestion) &&
+    Array.isArray(actionsSuggestion.aiValue)
+      ? (actionsSuggestion.aiValue as Record<string, unknown>[])
+      : [];
+
+  const visibleActionTypes = new Set([
+    ...formActions
+      .map(action => action.type)
+      .filter((type): type is string => typeof type === 'string'),
+    ...previewActions
+      .map(action => getActionType(action))
+      .filter(type => type !== 'UNKNOWN'),
+  ]);
 
   const handleSave = useCallback(
     (action: ActionType) => {
@@ -170,24 +309,70 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
             onRemove={handleRemove}
           />
         );
+      case 'OTHER':
+        return (
+          <NoteView
+            key="other"
+            onSave={handleSave}
+            action={{ type: 'NOTE', notes: action.notes }}
+            onRemove={() => handleRemove('OTHER')}
+          />
+        );
+      default:
+        return null;
     }
   };
 
+  const actionsSummary = actionsSuggestion?.aiValue;
+  const suggestedCount = Array.isArray(actionsSummary) ? actionsSummary.length : 0;
+
   return (
-    <div>
-      <h3 className={'text-lg my-4 font-medium'}>
-        {editMode ? t('inspection:form.actions.titleSingular') : t('inspection:form.actions.title')}
+    <div
+      data-ai-field="actions"
+      className={cn(
+        'rounded-md p-3 transition-colors',
+        isPending &&
+          'border border-blue-200 bg-blue-50/40 dark:border-blue-900 dark:bg-blue-950/20',
+      )}
+    >
+      <h3 className="my-4 flex items-center gap-2 text-lg font-medium">
+        <span>
+          {editMode
+            ? t('inspection:form.actions.titleSingular')
+            : t('inspection:form.actions.title')}
+        </span>
+        {actionsSuggestion && <AiBadge />}
       </h3>
+
+      {actionsSuggestion && (
+        <AiSectionPreview
+          title={t('inspection:form.actions.title')}
+          summary={
+            suggestedCount > 0
+              ? `${suggestedCount} AI-suggested action${suggestedCount === 1 ? '' : 's'}`
+              : 'Review AI-suggested actions before applying them.'
+          }
+          currentValue={formatActionsPreview(formActions, t)}
+          suggestedValue={formatActionsPreview(actionsSuggestion.aiValue, t)}
+          hasConflict={actionsSuggestion.hasConflict}
+          status={actionsSuggestion.status}
+          onAccept={() => onAcceptSuggestion?.('actions')}
+          onDismiss={() => onDismissSuggestion?.('actions')}
+        />
+      )}
+
       {!editMode && (
         <div
           data-test={TEST_SELECTORS.ACTION_BUTTONS}
           className="flex flex-wrap gap-2"
         >
           {actionTypes.map(({ id, label, Icon }) => {
-            if (formActions.some(a => a.type === id)) return null;
+            if (visibleActionTypes.has(id)) return null;
+
             return (
               <Button
-                size={'sm'}
+                size="sm"
+                type="button"
                 onClick={e => {
                   e.preventDefault();
                   setSelectedAction(id);
@@ -203,9 +388,23 @@ export const ActionsSection: React.FC<ActionsSectionProps> = ({
       )}
 
       {renderActionForm && <div>{renderActionForm}</div>}
+
       {formState.errors.actions && (
         <div className="text-red-500">{formState.errors.actions.message}</div>
       )}
+
+      {previewActions.length > 0 && (
+        <div className="mt-4 space-y-3">
+          {previewActions.map((action, index) => (
+            <PendingAiActionCard
+              key={`ai-preview-${getActionKey(action, index)}`}
+              action={action}
+              t={t}
+            />
+          ))}
+        </div>
+      )}
+
       <div
         className="flex flex-col divide-y"
         data-test={TEST_SELECTORS.SELECTED_ACTIONS}

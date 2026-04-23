@@ -45,10 +45,12 @@ import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { AudioSection } from './audio-section';
 import { PhotosSection, PendingPhoto } from './photos-section';
+import { ScorePreviewSection } from './score-preview';
+import { AiMergeBanner } from '@/pages/inspection/components/inspection-form/ai-merge-banner';
+import { InspectionDateTimePicker } from '@/components/inspection-date-time-picker';
 import { uploadPendingPhotos } from './upload-pending-photos';
 import { uploadPendingRecordings } from './upload-pending-recordings';
-import { ScorePreviewSection } from './score-preview';
-import { InspectionDateTimePicker } from '@/components/inspection-date-time-picker';
+import { useInspectionAiMerge } from './use-inspection-ai-merge';
 
 interface PendingRecording {
   id: string;
@@ -65,6 +67,8 @@ type InspectionFormProps = {
   onCancel?: () => void;
   submitButtonText?: React.ReactNode;
   showCancelButton?: boolean;
+  aiDraft?: Partial<InspectionFormData>;
+  aiSuggestedFields?: string[];
 };
 
 export const InspectionForm: React.FC<InspectionFormProps> = ({
@@ -75,6 +79,8 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
   onCancel,
   submitButtonText,
   showCancelButton = false,
+  aiDraft,
+  aiSuggestedFields = [],
 }) => {
   const { t } = useTranslation('inspection');
   const [searchParams] = useSearchParams();
@@ -85,7 +91,6 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
   >([]);
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
 
-  // Use our new custom hooks
   const { data: inspection } = useInspection(inspectionId as string, {
     enabled: !!inspectionId,
   });
@@ -103,52 +108,70 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
             const details = action.details;
             return {
               type: ActionType.FEEDING,
-              notes: action.notes,
+              notes: action.notes ?? '',
               feedType: details.feedType,
               quantity: details.amount,
               unit: details.unit,
-              concentration: details.concentration,
+              concentration: details.concentration ?? '',
             };
-          } else if (action.details.type === ActionType.TREATMENT) {
+          }
+
+          if (action.details.type === ActionType.TREATMENT) {
             const details = action.details;
             return {
               type: ActionType.TREATMENT,
-              notes: action.notes,
+              notes: action.notes ?? '',
               amount: details.quantity,
               treatmentType: details.product,
               unit: details.unit,
             };
-          } else if (action.details.type === ActionType.FRAME) {
+          }
+
+          if (action.details.type === ActionType.FRAME) {
             const details = action.details;
             return {
               type: ActionType.FRAME,
-              notes: action.notes,
+              notes: action.notes ?? '',
               frames: details.quantity,
             };
-          } else {
+          }
+
+          if (action.details.type === ActionType.MAINTENANCE) {
+            const details = action.details;
             return {
-              type: ActionType.OTHER,
-              notes: action.notes,
+              type: ActionType.MAINTENANCE,
+              notes: action.notes ?? '',
+              component: details.component,
+              status: details.status,
             };
           }
+
+          if (action.details.type === ActionType.NOTE) {
+            const details = action.details;
+            return {
+              type: ActionType.NOTE,
+              notes: details.content || action.notes || '',
+            };
+          }
+
+          return {
+            type: ActionType.OTHER,
+            notes: action.notes || '',
+          };
         }) || [],
     },
   });
 
-  // Watch for changes in hive selection and date to auto-populate weather
   const selectedHiveId = form.watch('hiveId');
   const selectedDate = form.watch('date');
 
-  // Get hive details to access apiaryId
   const { data: selectedHive } = useHive(selectedHiveId || '', {
     enabled: !!selectedHiveId,
   });
 
-  // Format date for API call
   const dateString = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
   const isDateInFuture = selectedDate && selectedDate > new Date();
 
-  // Fetch weather for the selected date
   const { data: weatherData } = useWeatherForDate(
     selectedHive?.apiaryId || '',
     dateString,
@@ -157,16 +180,30 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
     },
   );
 
-  // Auto-populate weather when data is available
   useEffect(() => {
     if (weatherData && !isDateInFuture && selectedHive?.apiaryId) {
-      // Always update both temperature and weather conditions from weather data
       form.setValue('temperature', Math.round(weatherData.temperature));
 
       const mappedCondition = mapWeatherConditionToForm(weatherData.condition);
       form.setValue('weatherConditions', mappedCondition);
     }
   }, [weatherData, form, isDateInFuture, selectedHive?.apiaryId]);
+
+  const {
+    aiMergeState,
+    isAiSuggested,
+    acceptAiSuggestion,
+    dismissAiSuggestion,
+    acceptAllSafeAiSuggestions,
+    reviewConflicts,
+    dismissAllAiSuggestions,
+    pendingSuggestionCount,
+    conflictSuggestionCount,
+  } = useInspectionAiMerge({
+    form,
+    aiDraft,
+    aiSuggestedFields,
+  });
 
   const onSubmit = useUpsertInspection(inspectionId, {
     onBeforeNavigate: async (id: string) => {
@@ -181,19 +218,15 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
     },
   });
 
-  // Handler for regular save button
   const handleSave = form.handleSubmit(data => {
     if (mode === 'batch' && onSubmitSuccess) {
-      // In batch mode, call the custom success handler
       onSubmitSuccess(data);
     } else {
-      // If coming from scheduled inspection, automatically mark as completed
       const status = fromScheduled ? InspectionStatus.COMPLETED : undefined;
       onSubmit(data, status);
     }
   });
 
-  // Handler for save and complete button
   const handleSaveAndComplete = form.handleSubmit(data => {
     if (mode === 'batch' && onSubmitSuccess) {
       onSubmitSuccess(data);
@@ -208,12 +241,27 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
   const isEdit = Boolean(inspectionId);
   const isCompleted = inspection?.status === InspectionStatus.COMPLETED;
   const { isSubmitting } = form.formState;
+
   return (
-    <div className={'max-w-4xl ml-4'}>
-      <h1 className={'text-lg font-bold'}>
-        {isEdit ? t('inspection:form.editInspection') : t('inspection:form.newInspection')}
+    <div className="ml-4 max-w-4xl">
+      <h1 className="text-lg font-bold">
+        {isEdit
+          ? t('inspection:form.editInspection')
+          : t('inspection:form.newInspection')}
       </h1>
+
       <Separator className="my-2" />
+
+      {aiMergeState && pendingSuggestionCount > 0 && (
+        <AiMergeBanner
+          pendingCount={pendingSuggestionCount}
+          conflictCount={conflictSuggestionCount}
+          onAcceptAllSafe={acceptAllSafeAiSuggestions}
+          onReviewConflicts={reviewConflicts}
+          onDismissAll={dismissAllAiSuggestions}
+        />
+      )}
+
       <Form {...form}>
         <form onSubmit={e => e.preventDefault()} className="space-y-6">
           <FormField
@@ -228,8 +276,10 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
                     defaultValue={field.value ?? hiveId}
                     disabled={mode === 'batch'}
                   >
-                    <SelectTrigger className={'w-full'}>
-                      <SelectValue placeholder={t('inspection:form.selectHive')} />
+                    <SelectTrigger className="w-full">
+                      <SelectValue
+                        placeholder={t('inspection:form.selectHive')}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {hives?.map(option => (
@@ -240,7 +290,6 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
                     </SelectContent>
                   </Select>
                 </FormControl>
-
                 <FormMessage />
               </FormItem>
             )}
@@ -257,7 +306,7 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
-                          variant={'outline'}
+                          variant="outline"
                           className={cn(
                             'w-full pl-3 text-left font-normal',
                             !field.value && 'text-muted-foreground',
@@ -295,25 +344,28 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
                     </PopoverContent>
                   </Popover>
 
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="mt-1 flex items-center gap-2">
                     <InspectionDateTimePicker
                       date={field.value ?? new Date()}
                       isAllDay={isAllDay}
                       onDateChange={field.onChange}
-                      onIsAllDayChange={checked => form.setValue('isAllDay', checked)}
+                      onIsAllDayChange={checked =>
+                        form.setValue('isAllDay', checked)
+                      }
                     />
                   </div>
 
                   {isInFuture && (
-                    <div className={'p-4 rounded'}>
-                      <strong className={'text-blue-500'}>
+                    <div className="rounded p-4">
+                      <strong className="text-blue-500">
                         {t('inspection:form.futureScheduled')}
                       </strong>
-                      <p className={'text-blue-500'}>
+                      <p className="text-blue-500">
                         {t('inspection:form.futureScheduledDescription')}
                       </p>
                     </div>
                   )}
+
                   <FormMessage />
                 </FormItem>
               )}
@@ -322,29 +374,59 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
 
           {(mode !== 'batch' ? !isInFuture : true) && (
             <>
-              <hr className={'border-t border-border'} />
+              <hr className="border-t border-border" />
               <AudioSection
                 inspectionId={inspectionId}
                 pendingRecordings={pendingRecordings}
                 onPendingRecordingsChange={setPendingRecordings}
               />
-              <hr className={'border-t border-border'} />
+
+              <hr className="border-t border-border" />
               <PhotosSection
                 inspectionId={inspectionId}
                 pendingPhotos={pendingPhotos}
                 onPendingPhotosChange={setPendingPhotos}
               />
-              <hr className={'border-t border-border'} />
-              <WeatherSection />
 
-              <hr className={'border-t border-border'} />
-              <ObservationsSection />
-              <hr className={'border-t border-border'} />
-              <ScorePreviewSection />
-              <hr className={'border-t border-border'} />
-              <ActionsSection />
-              <hr className={'border-t border-border'} />
-              <NotesSection />
+              <hr className="border-t border-border" />
+              <WeatherSection
+                isAiSuggested={isAiSuggested}
+                aiMergeState={aiMergeState}
+                onAcceptSuggestion={acceptAiSuggestion}
+                onDismissSuggestion={dismissAiSuggestion}
+              />
+
+              <hr className="border-t border-border" />
+              <ObservationsSection
+                isAiSuggested={isAiSuggested}
+                aiMergeState={aiMergeState}
+                onAcceptSuggestion={acceptAiSuggestion}
+                onDismissSuggestion={dismissAiSuggestion}
+              />
+
+              <hr className="border-t border-border" />
+              <ScorePreviewSection
+                isAiSuggested={isAiSuggested}
+                aiMergeState={aiMergeState}
+                onAcceptSuggestion={acceptAiSuggestion}
+                onDismissSuggestion={dismissAiSuggestion}
+              />
+
+              <hr className="border-t border-border" />
+              <ActionsSection
+                isAiSuggested={isAiSuggested}
+                aiMergeState={aiMergeState}
+                onAcceptSuggestion={acceptAiSuggestion}
+                onDismissSuggestion={dismissAiSuggestion}
+              />
+
+              <hr className="border-t border-border" />
+              <NotesSection
+                isAiSuggested={isAiSuggested}
+                aiMergeState={aiMergeState}
+                onAcceptSuggestion={acceptAiSuggestion}
+                onDismissSuggestion={dismissAiSuggestion}
+              />
             </>
           )}
 
@@ -376,33 +458,39 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
                   onClick={handleSave}
                   type="submit"
                   className="w-full"
-                  variant={'default'}
+                  variant="default"
                   disabled={isSubmitting}
                   data-umami-event="Inspection Complete"
                 >
-                  {isSubmitting ? t('inspection:form.saving') : t('inspection:form.completeInspection')}
+                  {isSubmitting
+                    ? t('inspection:form.saving')
+                    : t('inspection:form.completeInspection')}
                 </Button>
               ) : (
                 <>
                   <Button
                     onClick={handleSave}
-                    variant={'outline'}
+                    variant="outline"
                     type="submit"
                     className="w-full"
                     disabled={isSubmitting}
                     data-umami-event="Inspection Save"
                   >
-                    {isSubmitting ? t('inspection:form.saving') : t('inspection:form.save')}
+                    {isSubmitting
+                      ? t('inspection:form.saving')
+                      : t('inspection:form.save')}
                   </Button>
                   <Button
                     onClick={handleSaveAndComplete}
                     type="submit"
                     className="w-full"
-                    variant={'default'}
+                    variant="default"
                     disabled={isSubmitting}
                     data-umami-event="Inspection Complete"
                   >
-                    {isSubmitting ? t('inspection:form.saving') : t('inspection:form.saveAndComplete')}
+                    {isSubmitting
+                      ? t('inspection:form.saving')
+                      : t('inspection:form.saveAndComplete')}
                   </Button>
                 </>
               )}
@@ -415,7 +503,9 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
               disabled={isSubmitting}
               data-umami-event="Inspection Create"
             >
-              {isSubmitting ? t('inspection:form.saving') : t('inspection:form.save')}
+              {isSubmitting
+                ? t('inspection:form.saving')
+                : t('inspection:form.save')}
             </Button>
           )}
         </form>

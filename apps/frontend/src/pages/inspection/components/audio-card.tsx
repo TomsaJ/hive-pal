@@ -1,19 +1,427 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Mic, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AudioRecordingsList } from '@/components/audio';
+import { Button } from '@/components/ui/button';
+import { AudioPlayer } from '@/components/audio';
 import {
   useInspectionAudio,
   useDeleteInspectionAudio,
   getAudioDownloadUrl,
 } from '@/api/hooks/useInspectionAudio';
+import {
+  useStartInspectionAudioAi,
+  useInspectionAudioAiStatus,
+  useInspectionAudioAiResult,
+} from '@/api/hooks/useInspectionAudioAi';
+import { useNavigate } from 'react-router-dom';
 
 interface AudioCardProps {
   inspectionId: string;
 }
 
+type RecordingAiStatus =
+  | 'NONE'
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'COMPLETED'
+  | 'FAILED';
+
+type CopyState = 'idle' | 'copied' | 'error';
+
+/** ✅ FIXED: replaces `any` */
+type InspectionAiResult = {
+  error?: unknown;
+  transcript?: {
+    text?: string | null;
+  } | null;
+  inspectionDraft?: unknown;
+};
+
+interface RecordingRowProps {
+  inspectionId: string;
+  recording: {
+    id: string;
+    fileName: string;
+    duration?: number | null;
+    transcriptionStatus?: RecordingAiStatus;
+    transcription?: string | null;
+  };
+  getDownloadUrl: (audioId: string) => Promise<string>;
+  onDelete: (audioId: string) => Promise<void>;
+  isDeleting: boolean;
+}
+
+function getAnalyzeButtonLabel(
+  isPending: boolean,
+  status: RecordingAiStatus,
+): string {
+  if (isPending) return 'Starting...';
+  if (status === 'PENDING') return 'Queued...';
+  if (status === 'PROCESSING') return 'Analyzing...';
+  return 'Analyze using AI';
+}
+
+function getSafeJson(value: unknown): string {
+  return JSON.stringify(value ?? {}, null, 2);
+}
+
+function scheduleCopyStateReset(setter: (value: CopyState) => void) {
+  window.setTimeout(() => setter('idle'), 1500);
+}
+
+function AiPanel({
+  effectiveStatus,
+  showAiOutput,
+  setShowAiOutput,
+  aiResult,
+  transcriptText,
+  copyTranscriptState,
+  copyJsonState,
+  handleCopyTranscript,
+  handleCopyJson,
+  statusQueryError,
+  isLoadingResult,
+}: {
+  effectiveStatus: RecordingAiStatus;
+  showAiOutput: boolean;
+  setShowAiOutput: React.Dispatch<React.SetStateAction<boolean>>;
+  aiResult: InspectionAiResult | undefined;
+  transcriptText: string;
+  copyTranscriptState: CopyState;
+  copyJsonState: CopyState;
+  handleCopyTranscript: () => Promise<void>;
+  handleCopyJson: () => Promise<void>;
+  statusQueryError?: string | null;
+  isLoadingResult: boolean;
+}) {
+  const shouldShowLoading =
+    showAiOutput && effectiveStatus === 'COMPLETED' && isLoadingResult;
+
+  const structuredJson = getSafeJson(
+    aiResult?.inspectionDraft ?? aiResult,
+  );
+
+  return (
+    <div className="space-y-4 rounded-md border p-4">
+      <div className="flex items-center justify-between">
+        <h4 className="font-medium">AI Output</h4>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setShowAiOutput((prev) => !prev)}
+        >
+          {showAiOutput ? 'Hide' : 'Show'}
+        </Button>
+      </div>
+
+      <div className="text-sm text-muted-foreground">
+        Status: {effectiveStatus}
+      </div>
+
+      {effectiveStatus === 'FAILED' && (
+        <div className="text-sm text-red-600">
+          AI analysis failed: {statusQueryError ?? 'Unknown error'}
+        </div>
+      )}
+
+      {showAiOutput && aiResult && (
+        <>
+          {aiResult?.error && (
+            <div className="text-sm text-yellow-600">
+              AI structuring failed, but transcript is available.
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <h5 className="text-sm font-medium">Transcript</h5>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCopyTranscript}
+                disabled={!transcriptText}
+              >
+                {copyTranscriptState === 'copied'
+                  ? 'Copied'
+                  : copyTranscriptState === 'error'
+                  ? 'Copy failed'
+                  : 'Copy Transcript'}
+              </Button>
+            </div>
+
+            <div className="whitespace-pre-wrap rounded bg-muted p-3 text-sm">
+              {transcriptText || 'No transcript returned.'}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <h5 className="text-sm font-medium">Structured JSON</h5>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCopyJson}
+              >
+                {copyJsonState === 'copied'
+                  ? 'Copied'
+                  : copyJsonState === 'error'
+                  ? 'Copy failed'
+                  : 'Copy JSON'}
+              </Button>
+            </div>
+
+            <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
+              {structuredJson}
+            </pre>
+          </div>
+
+          <details className="rounded-md border p-3 text-xs">
+            <summary className="cursor-pointer font-medium">
+              Debug / Raw AI Response
+            </summary>
+            <pre className="mt-3 overflow-x-auto whitespace-pre-wrap">
+              {getSafeJson(aiResult)}
+            </pre>
+          </details>
+        </>
+      )}
+
+      {shouldShowLoading && (
+        <div className="text-sm text-muted-foreground">
+          Loading AI result...
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RecordingRow({
+  inspectionId,
+  recording,
+  getDownloadUrl,
+  onDelete,
+  isDeleting,
+}: RecordingRowProps) {
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isLoadingUrl, setIsLoadingUrl] = useState(false);
+  const [showAiOutput, setShowAiOutput] = useState(false);
+  const [isPollingEnabled, setIsPollingEnabled] = useState(
+    recording.transcriptionStatus !== undefined &&
+      recording.transcriptionStatus !== 'NONE',
+  );
+  const [copyTranscriptState, setCopyTranscriptState] =
+    useState<CopyState>('idle');
+  const [copyJsonState, setCopyJsonState] =
+    useState<CopyState>('idle');
+  const [prefillMessage, setPrefillMessage] =
+    useState<string | null>(null);
+
+  const startAiMutation = useStartInspectionAudioAi(
+    inspectionId,
+    recording.id,
+  );
+
+  const statusQuery = useInspectionAudioAiStatus(
+    inspectionId,
+    recording.id,
+    isPollingEnabled,
+  );
+
+  const effectiveStatus: RecordingAiStatus =
+    statusQuery.data?.transcriptionStatus ??
+    recording.transcriptionStatus ??
+    'NONE';
+
+  const resultQuery = useInspectionAudioAiResult(
+    inspectionId,
+    recording.id,
+    effectiveStatus === 'COMPLETED',
+  );
+
+  const navigate = useNavigate();
+
+  const aiResult = resultQuery.data;
+  const transcriptText = aiResult?.transcript?.text ?? '';
+
+  const shouldShowAiPanel =
+    effectiveStatus !== 'NONE' || isPollingEnabled || Boolean(aiResult);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadUrl = async () => {
+      if (audioUrl) return;
+
+      setIsLoadingUrl(true);
+      try {
+        const url = await getDownloadUrl(recording.id);
+        if (!cancelled) {
+          setAudioUrl(url);
+        }
+      } catch (error) {
+        console.error('Failed to get audio URL:', error);
+      } finally {
+        if (!cancelled) {
+          setIsLoadingUrl(false);
+        }
+      }
+    };
+
+    void loadUrl();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [audioUrl, getDownloadUrl, recording.id]);
+
+  useEffect(() => {
+    if (effectiveStatus === 'COMPLETED' || effectiveStatus === 'FAILED') {
+      setShowAiOutput(true);
+    }
+  }, [effectiveStatus]);
+
+  useEffect(() => {
+    const isFinished =
+      effectiveStatus === 'COMPLETED' || effectiveStatus === 'FAILED';
+
+    if (isPollingEnabled && isFinished) {
+      setIsPollingEnabled(false);
+    }
+  }, [effectiveStatus, isPollingEnabled]);
+
+  const handlePrefillInspection = () => {
+    if (!aiResult?.inspectionDraft) {
+      setPrefillMessage('Run analysis first.');
+      window.setTimeout(() => setPrefillMessage(null), 2000);
+      return;
+    }
+
+    navigate(`/inspections/${inspectionId}/edit?from=ai`, {
+      state: {
+        aiDraft: aiResult.inspectionDraft,
+        aiSourceAudioId: recording.id,
+      },
+    });
+  };
+
+  const handleCopyTranscript = async () => {
+    if (!transcriptText) return;
+
+    try {
+      await navigator.clipboard.writeText(transcriptText);
+      setCopyTranscriptState('copied');
+    } catch (error) {
+      console.error('Failed to copy transcript:', error);
+      setCopyTranscriptState('error');
+    } finally {
+      scheduleCopyStateReset(setCopyTranscriptState);
+    }
+  };
+
+  const handleCopyJson = async () => {
+    const json = getSafeJson(
+      aiResult?.inspectionDraft ?? aiResult,
+    );
+
+    try {
+      await navigator.clipboard.writeText(json);
+      setCopyJsonState('copied');
+    } catch (error) {
+      console.error('Failed to copy JSON:', error);
+      setCopyJsonState('error');
+    } finally {
+      scheduleCopyStateReset(setCopyJsonState);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    try {
+      await startAiMutation.mutateAsync();
+      setIsPollingEnabled(true);
+      setShowAiOutput(true);
+    } catch (error) {
+      console.error('AI analysis failed to start:', error);
+      alert('Failed to start AI analysis.');
+    }
+  };
+
+  return (
+    <div className="space-y-3 rounded-lg border p-4">
+      {audioUrl ? (
+        <AudioPlayer
+          src={audioUrl}
+          fileName={recording.fileName}
+          duration={recording.duration ?? undefined}
+          onDelete={() => onDelete(recording.id)}
+          onDownload={() =>
+            window.open(audioUrl, '_blank', 'noopener,noreferrer')
+          }
+          isDeleting={isDeleting}
+        />
+      ) : (
+        <div className="text-sm text-muted-foreground">
+          {isLoadingUrl ? 'Loading audio...' : 'Preparing audio...'}
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            onClick={handleAnalyze}
+            disabled={
+              startAiMutation.isPending ||
+              effectiveStatus === 'PROCESSING' ||
+              effectiveStatus === 'PENDING'
+            }
+          >
+            {getAnalyzeButtonLabel(
+              startAiMutation.isPending,
+              effectiveStatus,
+            )}
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handlePrefillInspection}
+          >
+            Prefill inspection from AI
+          </Button>
+        </div>
+
+        {prefillMessage && (
+          <div className="text-sm text-muted-foreground">
+            {prefillMessage}
+          </div>
+        )}
+      </div>
+
+      {shouldShowAiPanel && (
+        <AiPanel
+          effectiveStatus={effectiveStatus}
+          showAiOutput={showAiOutput}
+          setShowAiOutput={setShowAiOutput}
+          aiResult={aiResult}
+          transcriptText={transcriptText}
+          copyTranscriptState={copyTranscriptState}
+          copyJsonState={copyJsonState}
+          handleCopyTranscript={handleCopyTranscript}
+          handleCopyJson={handleCopyJson}
+          statusQueryError={statusQuery.data?.analysisError}
+          isLoadingResult={resultQuery.isLoading}
+        />
+      )}
+    </div>
+  );
+}
+
 export function AudioCard({ inspectionId }: AudioCardProps) {
-  const { data: recordings = [], isLoading } = useInspectionAudio(inspectionId);
+  const { data: recordings = [], isLoading } =
+    useInspectionAudio(inspectionId);
   const deleteAudio = useDeleteInspectionAudio(inspectionId);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -30,13 +438,11 @@ export function AudioCard({ inspectionId }: AudioCardProps) {
   );
 
   const getDownloadUrl = useCallback(
-    async (audioId: string) => {
-      return getAudioDownloadUrl(inspectionId, audioId);
-    },
+    async (audioId: string) =>
+      getAudioDownloadUrl(inspectionId, audioId),
     [inspectionId],
   );
 
-  // Don't render the card if there are no recordings and we're not loading
   if (!isLoading && recordings.length === 0) {
     return null;
   }
@@ -50,23 +456,32 @@ export function AudioCard({ inspectionId }: AudioCardProps) {
           {recordings.length > 0 && (
             <span className="text-sm font-normal text-muted-foreground">
               ({recordings.length}{' '}
-              {recordings.length === 1 ? 'recording' : 'recordings'})
+              {recordings.length === 1
+                ? 'recording'
+                : 'recordings'})
             </span>
           )}
         </CardTitle>
       </CardHeader>
+
       <CardContent>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <AudioRecordingsList
-            recordings={recordings}
-            getDownloadUrl={getDownloadUrl}
-            onDelete={handleDelete}
-            deletingId={deletingId}
-          />
+          <div className="space-y-3">
+            {recordings.map((recording) => (
+              <RecordingRow
+                key={recording.id}
+                inspectionId={inspectionId}
+                recording={recording}
+                getDownloadUrl={getDownloadUrl}
+                onDelete={handleDelete}
+                isDeleting={deletingId === recording.id}
+              />
+            ))}
+          </div>
         )}
       </CardContent>
     </Card>

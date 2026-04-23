@@ -38,6 +38,8 @@ import { QuickChecksModule } from './quick-checks/quick-checks.module';
 import { SharesModule } from './shares/shares.module';
 import { PhotosModule } from './photos/photos.module';
 import { DocumentsModule } from './documents/documents.module';
+import { InspectionAudioModule } from './inspection-audio/inspection-audio.module';
+import { AiModule } from './ai/ai.module';
 import { ApiarySharingModule } from './apiary-sharing/apiary-sharing.module';
 
 @Module({
@@ -76,6 +78,8 @@ import { ApiarySharingModule } from './apiary-sharing/apiary-sharing.module';
     SharesModule,
     PhotosModule,
     DocumentsModule,
+    AiModule,
+    InspectionAudioModule,
     ApiarySharingModule,
   ],
   controllers: [AppController, EnvController],

@@ -55,6 +55,7 @@
     "class-validator": "^0.14.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.3.1",
+    "form-data": "^4.0.5",
     "js-yaml": "^4.1.0",
     "mime-types": "^3.0.2",
     "nest-winston": "^1.10.2",

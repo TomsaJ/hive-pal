@@ -9,11 +9,24 @@ import { CustomLoggerService } from '../logger/logger.service';
 import { ApiaryUserFilter } from '../interface/request-with.apiary';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
-import { TranscriptionStatus } from '@/prisma/client';
+import { Prisma, TranscriptionStatus } from '@/prisma/client';
 
 export interface UploadAudioDto {
   fileName: string;
   duration?: string; // Comes as string from form-data
+}
+
+interface AiProcessUploadResponse {
+  status?: string;
+  transcript?: {
+    text?: string | null;
+  };
+  inspectionDraft?: Prisma.InputJsonValue | null;
+  files?: {
+    transcript_txt?: string;
+    transcript_json?: string;
+    recommendation_json?: string;
+  };
 }
 
 export interface AudioResponse {
@@ -33,6 +46,22 @@ export interface DownloadUrlResponse {
   expiresIn: number;
 }
 
+export interface AiAnalysisStatusResponse {
+  id: string;
+  transcriptionStatus: TranscriptionStatus;
+  analysisError: string | null;
+  analysisCompletedAt: Date | null;
+}
+
+export interface AiAnalysisResultResponse {
+  status: TranscriptionStatus;
+  transcript: {
+    text: string | null;
+  };
+  inspectionDraft: Prisma.JsonValue | null;
+  error: string | null;
+}
+
 const ALLOWED_MIME_TYPES = [
   'audio/webm',
   'audio/mp3',
@@ -44,6 +73,27 @@ const ALLOWED_MIME_TYPES = [
 @Injectable()
 export class InspectionAudioService {
   private maxFileSize: number;
+  private aiServiceBaseUrl: string;
+  private aiApiKey: string;
+
+  private resolveBackendBaseUrl(): string {
+    const backendPublicUrl = this.configService.get<string>('BACKEND_PUBLIC_URL');
+
+    if (backendPublicUrl) {
+      return backendPublicUrl.replace(/\/$/, '');
+    }
+
+    const port = this.configService.get<string>('PORT') ?? '3000';
+    return `http://127.0.0.1:${port}`;
+  }
+
+  private resolveDownloadUrl(downloadUrl: string): string {
+    if (/^https?:\/\//i.test(downloadUrl)) {
+      return downloadUrl;
+    }
+
+    return new URL(downloadUrl, this.resolveBackendBaseUrl()).toString();
+  }
 
   constructor(
     private prisma: PrismaService,
@@ -51,8 +101,15 @@ export class InspectionAudioService {
     private logger: CustomLoggerService,
     private configService: ConfigService,
   ) {
-    this.maxFileSize =
-      this.configService.get<number>('AUDIO_MAX_FILE_SIZE') || 52428800; // 50MB default
+    this.maxFileSize = Number(
+      this.configService.get('INSPECTION_AUDIO_MAX_FILE_SIZE') ?? 10485760,
+    );
+
+    this.aiServiceBaseUrl =
+      this.configService.get<string>('AI_SERVICE_BASE_URL') ??
+      'http://hivepal-ai:8008';
+
+    this.aiApiKey = this.configService.get<string>('AI_API_KEY') ?? '';
   }
 
   /**
@@ -64,28 +121,24 @@ export class InspectionAudioService {
     dto: UploadAudioDto,
     filter: ApiaryUserFilter,
   ): Promise<AudioResponse> {
-    // Verify storage is configured
     if (!this.storageService.isEnabled()) {
       throw new BadRequestException(
         'Audio recording is not available. Storage is not configured.',
       );
     }
 
-    // Validate mime type
     if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
       throw new BadRequestException(
         `Invalid audio format. Allowed formats: ${ALLOWED_MIME_TYPES.join(', ')}`,
       );
     }
 
-    // Validate file size
     if (file.size > this.maxFileSize) {
       throw new BadRequestException(
         `File size exceeds maximum allowed (${Math.round(this.maxFileSize / 1024 / 1024)}MB)`,
       );
     }
 
-    // Verify inspection exists and belongs to user's apiary
     const inspection = await this.prisma.inspection.findFirst({
       where: {
         id: inspectionId,
@@ -103,22 +156,18 @@ export class InspectionAudioService {
       );
     }
 
-    // Generate audio ID and storage key
     const audioId = uuidv4();
     const extension = this.getExtensionFromMimeType(file.mimetype);
     const storageKey = `audio/${inspectionId}/${audioId}.${extension}`;
 
-    // Upload to S3
     await this.storageService.uploadObject(
       storageKey,
       file.buffer,
       file.mimetype,
     );
 
-    // Parse duration if provided
     const duration = dto.duration ? parseFloat(dto.duration) : null;
 
-    // Create audio record
     const audio = await this.prisma.inspectionAudio.create({
       data: {
         id: audioId,
@@ -149,7 +198,6 @@ export class InspectionAudioService {
     inspectionId: string,
     filter: ApiaryUserFilter,
   ): Promise<AudioResponse[]> {
-    // Verify inspection exists and belongs to user
     const inspection = await this.prisma.inspection.findFirst({
       where: {
         id: inspectionId,
@@ -207,7 +255,7 @@ export class InspectionAudioService {
       throw new NotFoundException(`Audio with ID ${audioId} not found`);
     }
 
-    const expiresIn = 3600; // 1 hour
+    const expiresIn = 3600;
     const downloadUrl = await this.storageService.generateDownloadUrl(
       audio.storageKey,
       expiresIn,
@@ -242,7 +290,6 @@ export class InspectionAudioService {
       throw new NotFoundException(`Audio with ID ${audioId} not found`);
     }
 
-    // Delete from storage
     if (this.storageService.isEnabled()) {
       try {
         await this.storageService.deleteObject(audio.storageKey);
@@ -256,7 +303,6 @@ export class InspectionAudioService {
       }
     }
 
-    // Delete from database
     await this.prisma.inspectionAudio.delete({
       where: { id: audioId },
     });
@@ -277,7 +323,6 @@ export class InspectionAudioService {
       select: { storageKey: true },
     });
 
-    // Delete from storage
     if (this.storageService.isEnabled() && audioRecordings.length > 0) {
       try {
         await this.storageService.deleteObjects(
@@ -291,8 +336,190 @@ export class InspectionAudioService {
         });
       }
     }
+  }
 
-    // Database records will be deleted by cascade
+  async startAiAnalysis(
+    inspectionId: string,
+    audioId: string,
+    filter: ApiaryUserFilter,
+  ): Promise<{ status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' }> {
+    const audio = await this.prisma.inspectionAudio.findFirst({
+      where: {
+        id: audioId,
+        inspectionId,
+        inspection: {
+          hive: {
+            apiary: {
+              id: filter.apiaryId,
+              userId: filter.userId,
+            },
+          },
+        },
+      },
+    });
+
+    if (!audio) {
+      throw new NotFoundException(`Audio with ID ${audioId} not found`);
+    }
+
+    await this.prisma.inspectionAudio.update({
+      where: { id: audioId },
+      data: {
+        transcription: null,
+        transcriptionStatus: 'PENDING',
+        analysisResult: Prisma.JsonNull,
+        analysisError: null,
+        analysisCompletedAt: null,
+      },
+    });
+
+    void this.runAiAnalysisInBackground(audioId, audio.storageKey);
+
+    return { status: 'PENDING' };
+  }
+
+  private async runAiAnalysisInBackground(
+    audioId: string,
+    storageKey: string,
+  ): Promise<void> {
+    try {
+      await this.prisma.inspectionAudio.update({
+        where: { id: audioId },
+        data: { transcriptionStatus: 'PROCESSING' },
+      });
+
+      const downloadUrl = await this.storageService.generateDownloadUrl(
+        storageKey,
+        3600,
+      );
+      const resolvedDownloadUrl = this.resolveDownloadUrl(downloadUrl);
+      const audioResponse = await fetch(resolvedDownloadUrl);
+
+      if (!audioResponse.ok) {
+        throw new Error(
+          `Failed to download audio file: ${audioResponse.status}`,
+        );
+      }
+
+      const fileArrayBuffer = await audioResponse.arrayBuffer();
+
+      const formData = new FormData();
+      const fileBlob = new Blob([fileArrayBuffer], { type: 'audio/webm' });
+      formData.append('file', fileBlob, 'audio.webm');
+
+      const response = await fetch(`${this.aiServiceBaseUrl}/process-upload`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.aiApiKey}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI service returned ${response.status}`);
+      }
+
+      const rawResult: unknown = await response.json();
+      const result = rawResult as AiProcessUploadResponse;
+
+      await this.prisma.inspectionAudio.update({
+        where: { id: audioId },
+        data: {
+          transcription: result.transcript?.text ?? null,
+          transcriptionStatus: 'COMPLETED',
+          analysisResult: result.inspectionDraft ?? Prisma.JsonNull,
+          analysisError: null,
+          analysisCompletedAt: new Date(),
+        },
+      });
+    } catch (error) {
+      await this.prisma.inspectionAudio.update({
+        where: { id: audioId },
+        data: {
+          transcriptionStatus: 'FAILED',
+          analysisError: error instanceof Error ? error.message : String(error),
+        },
+      });
+
+      this.logger.error({
+        message: 'AI analysis failed',
+        audioId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  async getAiAnalysisStatus(
+    inspectionId: string,
+    audioId: string,
+    filter: ApiaryUserFilter,
+  ): Promise<AiAnalysisStatusResponse> {
+    const audio = await this.prisma.inspectionAudio.findFirst({
+      where: {
+        id: audioId,
+        inspectionId,
+        inspection: {
+          hive: {
+            apiary: {
+              id: filter.apiaryId,
+              userId: filter.userId,
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        transcriptionStatus: true,
+        analysisError: true,
+        analysisCompletedAt: true,
+      },
+    });
+
+    if (!audio) {
+      throw new NotFoundException(`Audio with ID ${audioId} not found`);
+    }
+
+    return audio;
+  }
+
+  async getAiAnalysisResult(
+    inspectionId: string,
+    audioId: string,
+    filter: ApiaryUserFilter,
+  ): Promise<AiAnalysisResultResponse> {
+    const audio = await this.prisma.inspectionAudio.findFirst({
+      where: {
+        id: audioId,
+        inspectionId,
+        inspection: {
+          hive: {
+            apiary: {
+              id: filter.apiaryId,
+              userId: filter.userId,
+            },
+          },
+        },
+      },
+      select: {
+        transcriptionStatus: true,
+        transcription: true,
+        analysisResult: true,
+        analysisError: true,
+      },
+    });
+
+    if (!audio) {
+      throw new NotFoundException(`Audio with ID ${audioId} not found`);
+    }
+
+    return {
+      status: audio.transcriptionStatus,
+      transcript: {
+        text: audio.transcription,
+      },
+      inspectionDraft: audio.analysisResult,
+      error: audio.analysisError,
+    };
   }
 
   private getExtensionFromMimeType(mimeType: string): string {
@@ -303,6 +530,7 @@ export class InspectionAudioService {
       'audio/ogg': 'ogg',
       'audio/wav': 'wav',
     };
+
     return mimeToExt[mimeType] || 'webm';
   }
 
@@ -312,6 +540,7 @@ export class InspectionAudioService {
     if (!audio) {
       throw new Error('Audio record not found');
     }
+
     return {
       id: audio.id,
       inspectionId: audio.inspectionId,
