@@ -3,18 +3,12 @@ import os
 import pathlib
 import time
 import tempfile
-
-import requests
-from faster_whisper import WhisperModel
 from flask import Flask, abort, jsonify, request
+from faster_whisper import WhisperModel
+import requests
 
-# This service is designed as a stateless API.
-# Authentication is performed with a Bearer token in the Authorization header,
-# not with browser cookies or Flask session auth.
-# Because browsers do not automatically attach this header cross-site the way
-# they do with cookies, classic CSRF protection is not used here.
 app = Flask(__name__)
-AI_API_KEY = os.environ.get("AI_API_KEY", "")
+AI_API_KEY = (os.environ.get("AI_API_KEY") or "").strip()
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://ollama:11434/api/chat")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen3:8b")
@@ -28,15 +22,7 @@ OUTPUT_DIR = pathlib.Path(os.environ.get("OUTPUT_DIR", "/data/processed"))
 MAX_TRANSCRIPT_CHARS = int(os.environ.get("MAX_TRANSCRIPT_CHARS", "12000"))
 
 SUPPORTED_EXTENSIONS = {
-    ".wav",
-    ".mp3",
-    ".m4a",
-    ".flac",
-    ".ogg",
-    ".mp4",
-    ".mpeg",
-    ".mpga",
-    ".webm",
+    ".wav", ".mp3", ".m4a", ".flac", ".ogg", ".mp4", ".mpeg", ".mpga", ".webm"
 }
 
 for folder in [AUDIO_INPUT_DIR, TRANSCRIPTS_DIR, OUTPUT_DIR]:
@@ -56,10 +42,7 @@ SCHEMA = {
         },
         "date": {
             "type": ["string", "null"],
-            "description": (
-                "ISO 8601 datetime string if the transcript clearly states "
-                "the inspection date/time; otherwise null"
-            ),
+            "description": "ISO 8601 datetime string if the transcript clearly states the inspection date/time; otherwise null"
         },
         "temperature": {
             "type": ["number", "null"]
@@ -84,7 +67,7 @@ SCHEMA = {
                 "queenSeen": {"type": ["boolean", "null"]},
                 "broodPattern": {
                     "type": ["string", "null"],
-                    "enum": ["solid", "spotty", "scattered", "patchy", "excellent", "poor", None],
+                    "enum": ["solid", "spotty", "scattered", "patchy", "excellent", "poor", None]
                 },
                 "additionalObservations": {
                     "type": "array",
@@ -102,9 +85,9 @@ SCHEMA = {
                             "healthy",
                             "active",
                             "sluggish",
-                            "thriving",
-                        ],
-                    },
+                            "thriving"
+                        ]
+                    }
                 },
                 "reminderObservations": {
                     "type": "array",
@@ -117,10 +100,10 @@ SCHEMA = {
                             "queen_issues",
                             "requires_treatment",
                             "low_stores",
-                            "prepare_for_winter",
-                        ],
-                    },
-                },
+                            "prepare_for_winter"
+                        ]
+                    }
+                }
             },
             "required": [
                 "strength",
@@ -134,8 +117,8 @@ SCHEMA = {
                 "queenSeen",
                 "broodPattern",
                 "additionalObservations",
-                "reminderObservations",
-            ],
+                "reminderObservations"
+            ]
         },
         "actions": {
             "type": "array",
@@ -150,8 +133,8 @@ SCHEMA = {
                             "FRAME",
                             "MAINTENANCE",
                             "NOTE",
-                            "OTHER",
-                        ],
+                            "OTHER"
+                        ]
                     },
                     "notes": {
                         "type": ["string", "null"]
@@ -167,8 +150,8 @@ SCHEMA = {
                                     "FRAME",
                                     "MAINTENANCE",
                                     "NOTE",
-                                    "OTHER",
-                                ],
+                                    "OTHER"
+                                ]
                             },
                             "feedType": {"type": ["string", "null"]},
                             "amount": {"type": ["number", "null"]},
@@ -179,20 +162,20 @@ SCHEMA = {
                             "duration": {"type": ["string", "null"]},
                             "component": {
                                 "type": ["string", "null"],
-                                "enum": ["BOX", "BOTTOM_BOARD", "COVER", None],
+                                "enum": ["BOX", "BOTTOM_BOARD", "COVER", None]
                             },
                             "status": {
                                 "type": ["string", "null"],
-                                "enum": ["CLEANED", "REPLACED", None],
+                                "enum": ["CLEANED", "REPLACED", None]
                             },
-                            "content": {"type": ["string", "null"]},
+                            "content": {"type": ["string", "null"]}
                         },
-                        "required": ["type"],
-                    },
+                        "required": ["type"]
+                    }
                 },
-                "required": ["type", "details"],
-            },
-        },
+                "required": ["type", "details"]
+            }
+        }
     },
     "required": [
         "hiveId",
@@ -201,10 +184,9 @@ SCHEMA = {
         "weatherConditions",
         "notes",
         "observations",
-        "actions",
-    ],
+        "actions"
+    ]
 }
-
 
 def empty_form_draft():
     return {
@@ -228,7 +210,6 @@ def empty_form_draft():
         "actions": [],
     }
 
-
 def truncate_transcript(text: str, max_chars: int = MAX_TRANSCRIPT_CHARS) -> str:
     text = (text or "").strip()
     if len(text) <= max_chars:
@@ -239,11 +220,10 @@ def truncate_transcript(text: str, max_chars: int = MAX_TRANSCRIPT_CHARS) -> str
 def require_api_key(req):
     if not AI_API_KEY:
         return
-
     auth = req.headers.get("Authorization", "")
     expected = f"Bearer {AI_API_KEY}"
-
     if auth != expected:
+        from flask import abort
         abort(401, description="Unauthorized")
 
 
@@ -262,7 +242,7 @@ def transcribe_file(audio_path: str):
         segment_list.append({
             "start": seg.start,
             "end": seg.end,
-            "text": text,
+            "text": text
         })
         if text:
             full_text_parts.append(text)
@@ -392,153 +372,6 @@ Transcript:
 """.strip()
 
 
-def _normalize_string_list(values, mapping, valid_values):
-    if not isinstance(values, list):
-        return []
-
-    normalized_values = []
-    for item in values:
-        mapped = mapping.get(item)
-        if mapped in valid_values:
-            normalized_values.append(mapped)
-
-    return normalized_values
-
-
-def _normalize_action(action):
-    if not isinstance(action, dict):
-        return None
-
-    action_type = action.get("type")
-    details = action.get("details") or {}
-    notes = action.get("notes")
-
-    if action_type == "FEEDING":
-        return {
-            "type": "FEEDING",
-            "notes": notes,
-            "details": {
-                "type": "FEEDING",
-                "feedType": details.get("feedType"),
-                "amount": details.get("amount"),
-                "unit": details.get("unit"),
-                "concentration": details.get("concentration"),
-            },
-        }
-
-    if action_type == "TREATMENT":
-        return {
-            "type": "TREATMENT",
-            "notes": notes,
-            "details": {
-                "type": "TREATMENT",
-                "product": details.get("product"),
-                "quantity": details.get("quantity"),
-                "unit": details.get("unit"),
-                "duration": details.get("duration"),
-            },
-        }
-
-    if action_type == "FRAME":
-        return {
-            "type": "FRAME",
-            "notes": notes,
-            "details": {
-                "type": "FRAME",
-                "quantity": details.get("quantity"),
-            },
-        }
-
-    if action_type == "MAINTENANCE":
-        return {
-            "type": "MAINTENANCE",
-            "notes": notes,
-            "details": {
-                "type": "MAINTENANCE",
-                "component": details.get("component"),
-                "status": details.get("status"),
-            },
-        }
-
-    if action_type == "NOTE":
-        return {
-            "type": "NOTE",
-            "notes": notes,
-            "details": {
-                "type": "NOTE",
-                "content": details.get("content"),
-            },
-        }
-
-    if action_type == "OTHER":
-        return {
-            "type": "OTHER",
-            "notes": notes,
-            "details": {
-                "type": "OTHER",
-            },
-        }
-
-    return None
-
-
-def _map_action_to_form(action):
-    if not isinstance(action, dict):
-        return None
-
-    action_type = action.get("type")
-    details = action.get("details") or {}
-    notes = action.get("notes") or ""
-
-    if action_type == "FEEDING":
-        return {
-            "type": "FEEDING",
-            "feedType": details.get("feedType") or "",
-            "quantity": details.get("amount"),
-            "unit": details.get("unit") or "",
-            "concentration": details.get("concentration") or "",
-            "notes": notes,
-        }
-
-    if action_type == "TREATMENT":
-        return {
-            "type": "TREATMENT",
-            "treatmentType": details.get("product") or "",
-            "amount": details.get("quantity"),
-            "unit": details.get("unit") or "",
-            "notes": notes,
-        }
-
-    if action_type == "FRAME":
-        return {
-            "type": "FRAME",
-            "frames": details.get("quantity"),
-            "notes": notes,
-        }
-
-    if action_type == "MAINTENANCE":
-        return {
-            "type": "MAINTENANCE",
-            "component": details.get("component") or "",
-            "status": details.get("status") or "",
-            "notes": notes,
-        }
-
-    if action_type == "NOTE":
-        return {
-            "type": "NOTE",
-            "notes": notes or details.get("content") or "",
-        }
-
-    if action_type == "OTHER":
-        return {
-            "type": "OTHER",
-            "notes": notes,
-        }
-
-    return None
-
-
 def normalize_recommendation(data: dict) -> dict:
     if not isinstance(data, dict):
         data = {}
@@ -594,28 +427,14 @@ def normalize_recommendation(data: dict) -> dict:
     }
 
     valid_additional = {
-        "calm",
-        "defensive",
-        "aggressive",
-        "nervous",
-        "varroa_present",
-        "small_hive_beetle",
-        "wax_moths",
-        "ants_present",
-        "healthy",
-        "active",
-        "sluggish",
-        "thriving",
+        "calm", "defensive", "aggressive", "nervous",
+        "varroa_present", "small_hive_beetle", "wax_moths", "ants_present",
+        "healthy", "active", "sluggish", "thriving"
     }
 
     valid_reminders = {
-        "honey_bound",
-        "overcrowded",
-        "needs_super",
-        "queen_issues",
-        "requires_treatment",
-        "low_stores",
-        "prepare_for_winter",
+        "honey_bound", "overcrowded", "needs_super", "queen_issues",
+        "requires_treatment", "low_stores", "prepare_for_winter"
     }
 
     normalized = {
@@ -625,42 +444,126 @@ def normalize_recommendation(data: dict) -> dict:
         "weatherConditions": data.get("weatherConditions"),
         "notes": data.get("notes"),
         "observations": {
-            "strength": observations.get("strength"),
-            "uncappedBrood": observations.get("uncappedBrood"),
-            "cappedBrood": observations.get("cappedBrood"),
-            "honeyStores": observations.get("honeyStores"),
-            "pollenStores": observations.get("pollenStores"),
-            "queenCells": observations.get("queenCells"),
-            "swarmCells": observations.get("swarmCells"),
-            "supersedureCells": observations.get("supersedureCells"),
-            "queenSeen": observations.get("queenSeen"),
-            "broodPattern": brood_pattern_map.get(observations.get("broodPattern")),
-            "additionalObservations": _normalize_string_list(
-                observations.get("additionalObservations", []),
-                additional_map,
-                valid_additional,
-            ),
-            "reminderObservations": _normalize_string_list(
-                observations.get("reminderObservations", []),
-                reminder_map,
-                valid_reminders,
-            ),
+            "strength": None,
+            "uncappedBrood": None,
+            "cappedBrood": None,
+            "honeyStores": None,
+            "pollenStores": None,
+            "queenCells": None,
+            "swarmCells": None,
+            "supersedureCells": None,
+            "queenSeen": None,
+            "broodPattern": None,
+            "additionalObservations": [],
+            "reminderObservations": [],
         },
         "actions": [],
     }
+    normalized["hiveId"] = data.get("hiveId")
+    normalized["date"] = data.get("date")
+    normalized["temperature"] = data.get("temperature")
+    normalized["weatherConditions"] = data.get("weatherConditions")
+    normalized["notes"] = data.get("notes")
+
+    normalized["observations"] = {
+        "strength": observations.get("strength"),
+        "uncappedBrood": observations.get("uncappedBrood"),
+        "cappedBrood": observations.get("cappedBrood"),
+        "honeyStores": observations.get("honeyStores"),
+        "pollenStores": observations.get("pollenStores"),
+        "queenCells": observations.get("queenCells"),
+        "swarmCells": observations.get("swarmCells"),
+        "supersedureCells": observations.get("supersedureCells"),
+        "queenSeen": observations.get("queenSeen"),
+        "broodPattern": brood_pattern_map.get(observations.get("broodPattern"), None),
+        "additionalObservations": [
+            additional_map[item]
+            for item in observations.get("additionalObservations", [])
+            if item in additional_map and additional_map[item] in valid_additional
+        ],
+        "reminderObservations": [
+            reminder_map[item]
+            for item in observations.get("reminderObservations", [])
+            if item in reminder_map and reminder_map[item] in valid_reminders
+        ],
+    }
 
     normalized_actions = []
+
     for action in actions:
-        normalized_action = _normalize_action(action)
-        if normalized_action is not None:
-            normalized_actions.append(normalized_action)
+        if not isinstance(action, dict):
+            continue
+
+        action_type = action.get("type")
+        details = action.get("details") or {}
+
+        if action_type == "FEEDING":
+            normalized_actions.append({
+                "type": "FEEDING",
+                "notes": action.get("notes"),
+                "details": {
+                    "type": "FEEDING",
+                    "feedType": details.get("feedType"),
+                    "amount": details.get("amount"),
+                    "unit": details.get("unit"),
+                    "concentration": details.get("concentration"),
+                },
+            })
+        elif action_type == "TREATMENT":
+            normalized_actions.append({
+                "type": "TREATMENT",
+                "notes": action.get("notes"),
+                "details": {
+                    "type": "TREATMENT",
+                    "product": details.get("product"),
+                    "quantity": details.get("quantity"),
+                    "unit": details.get("unit"),
+                    "duration": details.get("duration"),
+                },
+            })
+        elif action_type == "FRAME":
+            normalized_actions.append({
+                "type": "FRAME",
+                "notes": action.get("notes"),
+                "details": {
+                    "type": "FRAME",
+                    "quantity": details.get("quantity"),
+                },
+            })
+        elif action_type == "MAINTENANCE":
+            normalized_actions.append({
+                "type": "MAINTENANCE",
+                "notes": action.get("notes"),
+                "details": {
+                    "type": "MAINTENANCE",
+                    "component": details.get("component"),
+                    "status": details.get("status"),
+                },
+            })
+        elif action_type == "NOTE":
+            normalized_actions.append({
+                "type": "NOTE",
+                "notes": action.get("notes"),
+                "details": {
+                    "type": "NOTE",
+                    "content": details.get("content"),
+                },
+            })
+        elif action_type == "OTHER":
+            normalized_actions.append({
+                "type": "OTHER",
+                "notes": action.get("notes"),
+                "details": {
+                    "type": "OTHER",
+                },
+            })
 
     normalized["actions"] = normalized_actions
     return normalized
 
-
 def map_ai_to_form_draft(ai: dict) -> dict:
     draft = empty_form_draft()
+
     observations = ai.get("observations") or {}
 
     draft["temperature"] = ai.get("temperature")
@@ -683,14 +586,62 @@ def map_ai_to_form_draft(ai: dict) -> dict:
     }
 
     mapped_actions = []
+
     for action in ai.get("actions", []):
-        mapped_action = _map_action_to_form(action)
-        if mapped_action is not None:
-            mapped_actions.append(mapped_action)
+        if not isinstance(action, dict):
+            continue
+
+        action_type = action.get("type")
+        details = action.get("details") or {}
+
+        if action_type == "FEEDING":
+            mapped_actions.append({
+                "type": "FEEDING",
+                "feedType": details.get("feedType") or "",
+                "quantity": details.get("amount"),
+                "unit": details.get("unit") or "",
+                "concentration": details.get("concentration") or "",
+                "notes": action.get("notes") or "",
+            })
+
+        elif action_type == "TREATMENT":
+            mapped_actions.append({
+                "type": "TREATMENT",
+                "treatmentType": details.get("product") or "",
+                "amount": details.get("quantity"),
+                "unit": details.get("unit") or "",
+                "notes": action.get("notes") or "",
+            })
+
+        elif action_type == "FRAME":
+            mapped_actions.append({
+                "type": "FRAME",
+                "frames": details.get("quantity"),
+                "notes": action.get("notes") or "",
+            })
+
+        elif action_type == "MAINTENANCE":
+            mapped_actions.append({
+                "type": "MAINTENANCE",
+                "component": details.get("component") or "",
+                "status": details.get("status") or "",
+                "notes": action.get("notes") or "",
+            })
+
+        elif action_type == "NOTE":
+            mapped_actions.append({
+                "type": "NOTE",
+                "notes": action.get("notes") or details.get("content") or "",
+            })
+
+        elif action_type == "OTHER":
+            mapped_actions.append({
+                "type": "OTHER",
+                "notes": action.get("notes") or "",
+            })
 
     draft["actions"] = mapped_actions
     return draft
-
 
 def recommend_from_transcript(transcript: str):
     payload = {
@@ -698,15 +649,15 @@ def recommend_from_transcript(transcript: str):
         "messages": [
             {
                 "role": "system",
-                "content": "Return only JSON that exactly matches the provided inspection schema.",
+                "content": "Return only JSON that exactly matches the provided inspection schema."
             },
             {
                 "role": "user",
-                "content": build_prompt(transcript),
-            },
+                "content": build_prompt(transcript)
+            }
         ],
         "stream": False,
-        "format": SCHEMA,
+        "format": SCHEMA
     }
 
     last_error = None
@@ -745,11 +696,11 @@ def save_outputs(base_name: str, transcription: dict, recommendation: dict):
     transcript_path.write_text(transcription["text"], encoding="utf-8")
     transcript_json_path.write_text(
         json.dumps(transcription, ensure_ascii=False, indent=2),
-        encoding="utf-8",
+        encoding="utf-8"
     )
     result_json_path.write_text(
         json.dumps(recommendation, ensure_ascii=False, indent=2),
-        encoding="utf-8",
+        encoding="utf-8"
     )
 
     return {
@@ -768,8 +719,10 @@ def process_audio_file(audio_path: str):
     analysis_error = None
     try:
         trimmed_transcript = truncate_transcript(transcription["text"])
+
         ai_result = recommend_from_transcript(trimmed_transcript)
         recommendation = map_ai_to_form_draft(ai_result)
+
     except Exception as exc:
         analysis_error = str(exc)
         app.logger.exception("Recommendation generation failed")
@@ -784,7 +737,6 @@ def process_audio_file(audio_path: str):
         "analysis_error": analysis_error,
         "files": files,
     }
-
 
 @app.post("/process-upload")
 def process_upload():
@@ -834,8 +786,6 @@ def health():
 
 @app.post("/transcribe")
 def transcribe_endpoint():
-    require_api_key(request)
-
     data = request.get_json(force=True)
     audio_path = data["audio_path"]
     result = transcribe_file(audio_path)
@@ -844,8 +794,6 @@ def transcribe_endpoint():
 
 @app.post("/recommend")
 def recommend_endpoint():
-    require_api_key(request)
-
     data = request.get_json(force=True)
     transcript = data["transcript"]
     trimmed_transcript = truncate_transcript(transcript)
@@ -858,8 +806,6 @@ def recommend_endpoint():
 
 @app.post("/process")
 def process_endpoint():
-    require_api_key(request)
-
     data = request.get_json(force=True)
     audio_path = data["audio_path"]
     result = process_audio_file(audio_path)
@@ -868,8 +814,6 @@ def process_endpoint():
 
 @app.post("/process_incoming")
 def process_incoming():
-    require_api_key(request)
-
     processed = []
 
     for item in sorted(AUDIO_INPUT_DIR.iterdir()):
@@ -893,7 +837,4 @@ def process_incoming():
 
 
 if __name__ == "__main__":
-    app.run(
-        host=os.environ.get("FLASK_RUN_HOST", "0.0.0.0"),
-        port=int(os.environ.get("PORT", "8008")),
-    )
+    app.run(host="0.0.0.0", port=8008)

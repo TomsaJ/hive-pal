@@ -76,6 +76,25 @@ export class InspectionAudioService {
   private aiServiceBaseUrl: string;
   private aiApiKey: string;
 
+  private resolveBackendBaseUrl(): string {
+    const backendPublicUrl = this.configService.get<string>('BACKEND_PUBLIC_URL');
+
+    if (backendPublicUrl) {
+      return backendPublicUrl.replace(/\/$/, '');
+    }
+
+    const port = this.configService.get<string>('PORT') ?? '3000';
+    return `http://127.0.0.1:${port}`;
+  }
+
+  private resolveDownloadUrl(downloadUrl: string): string {
+    if (/^https?:\/\//i.test(downloadUrl)) {
+      return downloadUrl;
+    }
+
+    return new URL(downloadUrl, this.resolveBackendBaseUrl()).toString();
+  }
+
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
@@ -373,7 +392,8 @@ export class InspectionAudioService {
         storageKey,
         3600,
       );
-      const audioResponse = await fetch(downloadUrl);
+      const resolvedDownloadUrl = this.resolveDownloadUrl(downloadUrl);
+      const audioResponse = await fetch(resolvedDownloadUrl);
 
       if (!audioResponse.ok) {
         throw new Error(

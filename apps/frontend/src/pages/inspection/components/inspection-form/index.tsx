@@ -45,6 +45,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { AudioSection } from './audio-section';
 import { PhotosSection, PendingPhoto } from './photos-section';
+import { uploadPendingPhotos } from './upload-pending-photos';
+import { uploadPendingRecordings } from './upload-pending-recordings';
 import { ScorePreviewSection } from './score-preview';
 import {
   buildAiMergeState,
@@ -338,7 +340,18 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
       ).length
     : 0;
 
-  const onSubmit = useUpsertInspection(inspectionId);
+  const onSubmit = useUpsertInspection(inspectionId, {
+    onBeforeNavigate: async (id: string) => {
+      await Promise.all([
+        pendingRecordings.length > 0
+          ? uploadPendingRecordings(id, pendingRecordings)
+          : Promise.resolve(),
+        pendingPhotos.length > 0
+          ? uploadPendingPhotos(id, pendingPhotos)
+          : Promise.resolve(),
+      ]);
+    },
+  });
 
   const handleSave = form.handleSubmit(data => {
     if (mode === 'batch' && onSubmitSuccess) {
