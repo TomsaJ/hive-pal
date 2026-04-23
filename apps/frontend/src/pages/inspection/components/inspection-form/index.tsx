@@ -41,19 +41,16 @@ import {
 } from '@/api/hooks';
 import { ActionType, InspectionStatus } from 'shared-schemas';
 import { mapWeatherConditionToForm } from '@/utils/weather-mapping';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { AudioSection } from './audio-section';
 import { PhotosSection, PendingPhoto } from './photos-section';
-import { uploadPendingPhotos } from './upload-pending-photos';
-import { uploadPendingRecordings } from './upload-pending-recordings';
 import { ScorePreviewSection } from './score-preview';
-import {
-  buildAiMergeState,
-  type AiMergeState,
-} from '@/pages/inspection/lib/inspection-ai-merge';
 import { AiMergeBanner } from '@/pages/inspection/components/inspection-form/ai-merge-banner';
 import { InspectionDateTimePicker } from '@/components/inspection-date-time-picker';
+import { uploadPendingPhotos } from './upload-pending-photos';
+import { uploadPendingRecordings } from './upload-pending-recordings';
+import { useInspectionAiMerge } from './use-inspection-ai-merge';
 
 interface PendingRecording {
   id: string;
@@ -183,13 +180,6 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
     },
   );
 
-  const aiSuggestedFieldSet = useMemo(
-    () => new Set(aiSuggestedFields),
-    [aiSuggestedFields],
-  );
-
-  const isAiSuggested = (field: string) => aiSuggestedFieldSet.has(field);
-
   useEffect(() => {
     if (weatherData && !isDateInFuture && selectedHive?.apiaryId) {
       form.setValue('temperature', Math.round(weatherData.temperature));
@@ -199,146 +189,21 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({
     }
   }, [weatherData, form, isDateInFuture, selectedHive?.apiaryId]);
 
-  const [aiMergeState, setAiMergeState] = useState<AiMergeState | null>(null);
-
-  useEffect(() => {
-    if (!aiDraft || aiSuggestedFields.length === 0) {
-      setAiMergeState(null);
-      return;
-    }
-
-    const currentValues = form.getValues();
-    const mergeState = buildAiMergeState(currentValues, aiDraft);
-
-    const filteredSuggestions = Object.fromEntries(
-      Object.entries(mergeState.suggestions).filter(([field]) =>
-        aiSuggestedFieldSet.has(field),
-      ),
-    );
-
-    if (Object.keys(filteredSuggestions).length === 0) {
-      setAiMergeState(null);
-      return;
-    }
-
-    setAiMergeState({
-      suggestions: filteredSuggestions,
-    });
-  }, [aiDraft, aiSuggestedFields, aiSuggestedFieldSet, form]);
-
-  const acceptAiSuggestion = (field: string) => {
-    const suggestion = aiMergeState?.suggestions[field];
-    if (!suggestion) return;
-
-    form.setValue(field as never, suggestion.aiValue as never, {
-      shouldDirty: true,
-      shouldTouch: true,
-      shouldValidate: true,
-    });
-
-    setAiMergeState(prev => {
-      if (!prev) return prev;
-      return {
-        suggestions: {
-          ...prev.suggestions,
-          [field]: {
-            ...prev.suggestions[field],
-            status: 'accepted',
-          },
-        },
-      };
-    });
-  };
-
-  const dismissAiSuggestion = (field: string) => {
-    setAiMergeState(prev => {
-      if (!prev) return prev;
-      return {
-        suggestions: {
-          ...prev.suggestions,
-          [field]: {
-            ...prev.suggestions[field],
-            status: 'dismissed',
-          },
-        },
-      };
-    });
-  };
-
-  const acceptAllSafeAiSuggestions = () => {
-    if (!aiMergeState) return;
-
-    Object.values(aiMergeState.suggestions).forEach(suggestion => {
-      if (suggestion.status !== 'pending') return;
-      if (suggestion.hasConflict) return;
-
-      form.setValue(suggestion.field as never, suggestion.aiValue as never, {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      });
-    });
-
-    setAiMergeState(prev => {
-      if (!prev) return prev;
-
-      return {
-        suggestions: Object.fromEntries(
-          Object.entries(prev.suggestions).map(([field, suggestion]) => {
-            if (suggestion.status !== 'pending' || suggestion.hasConflict) {
-              return [field, suggestion];
-            }
-
-            return [field, { ...suggestion, status: 'accepted' }];
-          }),
-        ),
-      };
-    });
-  };
-
-  const reviewConflicts = () => {
-    const firstConflict = aiMergeState
-      ? Object.values(aiMergeState.suggestions).find(
-          suggestion =>
-            suggestion.status === 'pending' && suggestion.hasConflict,
-        )
-      : null;
-
-    if (!firstConflict) return;
-
-    const element = document.querySelector(
-      `[data-ai-field="${firstConflict.field}"]`,
-    );
-
-    if (element instanceof HTMLElement) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  };
-
-  const dismissAllAiSuggestions = () => {
-    if (!aiMergeState) return;
-
-    setAiMergeState({
-      suggestions: Object.fromEntries(
-        Object.entries(aiMergeState.suggestions).map(([field, suggestion]) => [
-          field,
-          { ...suggestion, status: 'dismissed' },
-        ]),
-      ),
-    });
-  };
-
-  const pendingSuggestionCount = aiMergeState
-    ? Object.values(aiMergeState.suggestions).filter(
-        suggestion => suggestion.status === 'pending',
-      ).length
-    : 0;
-
-  const conflictSuggestionCount = aiMergeState
-    ? Object.values(aiMergeState.suggestions).filter(
-        suggestion => suggestion.status === 'pending' && suggestion.hasConflict,
-      ).length
-    : 0;
+  const {
+    aiMergeState,
+    isAiSuggested,
+    acceptAiSuggestion,
+    dismissAiSuggestion,
+    acceptAllSafeAiSuggestions,
+    reviewConflicts,
+    dismissAllAiSuggestions,
+    pendingSuggestionCount,
+    conflictSuggestionCount,
+  } = useInspectionAiMerge({
+    form,
+    aiDraft,
+    aiSuggestedFields,
+  });
 
   const onSubmit = useUpsertInspection(inspectionId, {
     onBeforeNavigate: async (id: string) => {
