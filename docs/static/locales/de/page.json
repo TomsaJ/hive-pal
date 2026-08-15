@@ -11,7 +11,7 @@
   },
   "stats": {
     "title": "Open-Source-Projekt",
-    "subtitle": "Treten Sie unserer Gemeinschaft bei und helfen Sie, die Zukunft von Hive-Pal zu gestalten",
+    "subtitle": "Tritt unserer Gemeinschaft bei und hilf, die Zukunft von Hive-Pal zu gestalten",
     "openSource": "Open Source",
     "openSourceLabel": "Selbstgehostet & kostenlos",
     "contributions": "Beiträge",
@@ -23,26 +23,26 @@
   },
   "contribute": {
     "title": "Wie man beiträgt",
-    "subtitle": "Helfen Sie, Hive-Pal für alle besser zu machen",
+    "subtitle": "Hilf, Hive-Pal für alle besser zu machen",
     "code": {
       "title": "Code-Beiträge",
-      "description": "Tragen Sie zum Codebase bei, indem Sie Funktionen implementieren, Fehler beheben oder die Leistung verbessern. Suchen Sie in unseren GitHub-Problemen nach Aufgaben mit dem Label \"good first issue\", um zu beginnen."
+      "description": "Trag zum Codebase bei, indem du Funktionen implementierst, Fehler behebst oder die Leistung verbesserst. Such in unseren GitHub-Problemen nach Aufgaben mit dem Label \"good first issue\", um zu beginnen."
     },
     "docs": {
       "title": "Dokumentation",
-      "description": "Helfen Sie uns, unsere Dokumentation zu verbessern, indem Sie Fehler beheben, Beispiele hinzufügen oder Tutorials schreiben, um neuen Benutzern den Einstieg in Hive-Pal zu erleichtern."
+      "description": "Hilf uns, unsere Dokumentation zu verbessern, indem du Fehler behebst, Beispiele hinzufügst oder Tutorials schreibst, um neuen Benutzern den Einstieg in Hive-Pal zu erleichtern."
     },
     "testing": {
       "title": "Tests",
-      "description": "Testen Sie neue Funktionen, melden Sie Fehler und geben Sie Feedback zur Benutzererfahrung, um uns zu helfen, die Anwendung für alle zu verbessern."
+      "description": "Test neue Funktionen, melde Fehler und gib Feedback zur Benutzererfahrung, um uns zu helfen, die Anwendung für alle zu verbessern."
     },
     "features": {
       "title": "Feature-Anfragen",
-      "description": "Schlagen Sie neue Funktionen oder Verbesserungen vor, die Hive-Pal für Ihren Imkerei-Workflow nützlicher machen würden."
+      "description": "Schlag neue Funktionen oder Verbesserungen vor, die Hive-Pal für deinen Imkerei-Workflow nützlicher machen würden."
     }
   },
   "cta": {
-    "title": "Treten Sie der Hive-Pal-Gemeinschaft bei",
+    "title": "Tritt der Hive-Pal-Gemeinschaft bei",
     "description": "Hive-Pal ist ein Open-Source-Projekt in aktiver Entwicklung. Einige Funktionen sind noch in Arbeit, aber wir heißen Beiträge und Feedback von der Imkerei-Community willkommen.",
     "exploreDocs": "Dokumentation erkunden",
     "viewIssues": "GitHub-Probleme anzeigen"
