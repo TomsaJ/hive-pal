@@ -15,7 +15,7 @@ const config: Config = {
   trailingSlash: false,
   deploymentBranch: 'gh-pages', // The branch to deploy to
 
-  onBrokenLinks: 'warn',
+  onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
 
   // Even if you don't use internationalization, you can use this field to set
@@ -78,7 +78,14 @@ const config: Config = {
           'Documentation for Hive-Pal, an open-source, self-hostable beekeeping management application.',
         generateLLMsTxt: true,
         generateLLMsFullTxt: true,
-        includeOrder: ['intro', 'installation', 'getting-started/*', 'user-guide/*', 'self-hosting/*', 'troubleshooting'],
+        includeOrder: [
+          'intro',
+          'installation',
+          'getting-started/*',
+          'user-guide/*',
+          'self-hosting/*',
+          'troubleshooting',
+        ],
       },
     ],
   ],
@@ -89,8 +96,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl:
-            'https://github.com/martinhrvn/hive-pal/tree/main/docs/',
+          editUrl: 'https://github.com/martinhrvn/hive-pal/tree/main/docs/',
         },
         blog: false,
         theme: {
@@ -113,9 +119,9 @@ const config: Config = {
         content:
           'beekeeping, hive management, apiary, bee colony, inspection tracking, open source',
       },
-      {name: 'og:type', content: 'website'},
-      {name: 'og:site_name', content: 'Hive-Pal Documentation'},
-      {name: 'twitter:card', content: 'summary_large_image'},
+      { name: 'og:type', content: 'website' },
+      { name: 'og:site_name', content: 'Hive-Pal Documentation' },
+      { name: 'twitter:card', content: 'summary_large_image' },
     ],
     navbar: {
       title: 'Hive-Pal',
