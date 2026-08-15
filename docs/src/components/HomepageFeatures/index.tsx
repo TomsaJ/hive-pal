@@ -1,112 +1,75 @@
 import React from 'react';
 import clsx from 'clsx';
 import Heading from '@theme/Heading';
+import Translate from '@docusaurus/Translate';
 import { Book, Calendar, Clipboard, Cloud, Database, LineChart, Map, Shield, Smartphone } from 'lucide-react';
 import styles from './styles.module.css';
 
-const FeatureList = [
+interface Feature {
+    titleKey: string;
+    icon: React.ReactNode;
+    descriptionKey: string;
+    status: 'core' | 'in-progress' | 'planned';
+}
+
+const FeatureList: Feature[] = [
     {
-        title: 'Mobile-First Design',
+        titleKey: 'features.mobileFirstDesign.title',
         icon: <Smartphone size={32} />,
-        description: (
-            <>
-                Take your beekeeping records to the field with our responsive mobile interface.
-                Designed for field use on your smartphone or tablet.
-            </>
-        ),
+        descriptionKey: 'features.mobileFirstDesign.description',
         status: 'core',
     },
     {
-        title: 'Apiary Management',
+        titleKey: 'features.apiaryManagement.title',
         icon: <Map size={32} />,
-        description: (
-            <>
-                Manage your apiaries with location tracking and organization.
-                Keep all your hive locations organized in one place.
-            </>
-        ),
+        descriptionKey: 'features.apiaryManagement.description',
         status: 'core',
     },
     {
-        title: 'Hive Tracking',
+        titleKey: 'features.hiveTracking.title',
         icon: <Database size={32} />,
-        description: (
-            <>
-                Monitor individual hives, their status, and configuration.
-                Track equipment and maintain complete colony records.
-            </>
-        ),
+        descriptionKey: 'features.hiveTracking.description',
         status: 'core',
     },
     {
-        title: 'Inspection Forms',
+        titleKey: 'features.inspectionForms.title',
         icon: <Clipboard size={32} />,
-        description: (
-            <>
-                Record observations with streamlined inspection forms.
-                Quick toggles and rating scales for efficient data entry.
-            </>
-        ),
+        descriptionKey: 'features.inspectionForms.description',
         status: 'in-progress',
     },
     {
-        title: 'Queen Management',
+        titleKey: 'features.queenManagement.title',
         icon: <Shield size={32} />,
-        description: (
-            <>
-                Track queen details, marking colors, and replacement history.
-                Document queen performance and lineage over time.
-            </>
-        ),
+        descriptionKey: 'features.queenManagement.description',
         status: 'in-progress',
     },
     {
-        title: 'Weather Integration',
+        titleKey: 'features.weatherIntegration.title',
         icon: <Cloud size={32} />,
-        description: (
-            <>
-                Record weather conditions during inspections.
-                Track environmental factors alongside colony observations.
-            </>
-        ),
+        descriptionKey: 'features.weatherIntegration.description',
         status: 'planned',
     },
     {
-        title: 'Treatment Tracking',
+        titleKey: 'features.treatmentTracking.title',
         icon: <Calendar size={32} />,
-        description: (
-            <>
-                Log treatments with dates and methods.
-                Keep records of all medications and interventions.
-            </>
-        ),
+        descriptionKey: 'features.treatmentTracking.description',
         status: 'in-progress',
     },
     {
-        title: 'Performance Insights',
+        titleKey: 'features.performanceInsights.title',
         icon: <LineChart size={32} />,
-        description: (
-            <>
-                View colony strength and production trends over time.
-                Use data to optimize your beekeeping practices.
-            </>
-        ),
+        descriptionKey: 'features.performanceInsights.description',
         status: 'planned',
     },
     {
-        title: 'Self-Hosted',
+        titleKey: 'features.selfHosted.title',
         icon: <Book size={32} />,
-        description: (
-            <>
-                Run Hive-Pal on your own server or local network.
-                Keep complete control of your beekeeping data.
-            </>
-        ),
+        descriptionKey: 'features.selfHosted.description',
         status: 'core',
     },
 ];
 
-function Feature({title, icon, description, status}) {
+function Feature({titleKey, icon, descriptionKey, status}: Feature) {
     return (
         <div className={clsx('col col--4', styles.featureCard)}>
             <div className={styles.featureContent}>
@@ -115,17 +78,21 @@ function Feature({title, icon, description, status}) {
                 </div>
                 <div className={styles.featureDetails}>
                     <div className={styles.featureHeader}>
-                        <Heading as="h3" className={styles.featureTitle}>{title}</Heading>
+                        <Heading as="h3" className={styles.featureTitle}>
+                            <Translate id={titleKey} />
+                        </Heading>
                         {status !== 'core' && (
                             <span className={clsx(styles.featureStatus, {
                                 [styles.statusInProgress]: status === 'in-progress',
                                 [styles.statusPlanned]: status === 'planned',
                             })}>
-                {status === 'in-progress' ? 'In Progress' : 'Planned'}
-              </span>
+                                <Translate id={status === 'in-progress' ? 'features.status.inProgress' : 'features.status.planned'} />
+                            </span>
                         )}
                     </div>
-                    <p className={styles.featureDescription}>{description}</p>
+                    <p className={styles.featureDescription}>
+                        <Translate id={descriptionKey} />
+                    </p>
                 </div>
             </div>
         </div>

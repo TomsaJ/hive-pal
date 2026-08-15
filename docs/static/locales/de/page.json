@@ -1,0 +1,51 @@
+{
+  "hero": {
+    "getStarted": "Erste Schritte 🐝",
+    "github": "GitHub"
+  },
+  "features": {
+    "title": "Über Hive-Pal",
+    "subtitle": "Eine Open-Source-Imkereimanagement-Anwendung",
+    "status": "Projektstatus: Aktive Entwicklung",
+    "statusDescription": "Hive-Pal ist derzeit in aktiver Entwicklung. Einige der hier beschriebenen Funktionen werden noch implementiert oder verfeinert. Wir heißen Mitwirkende willkommen, die helfen, dieses Open-Source-Tool für die Imkerei-Community zu erstellen und zu verbessern."
+  },
+  "stats": {
+    "title": "Open-Source-Projekt",
+    "subtitle": "Treten Sie unserer Gemeinschaft bei und helfen Sie, die Zukunft von Hive-Pal zu gestalten",
+    "openSource": "Open Source",
+    "openSourceLabel": "Selbstgehostet & kostenlos",
+    "contributions": "Beiträge",
+    "contributionsLabel": "Willkommen",
+    "community": "Gemeinschaft",
+    "communityLabel": "Getrieben",
+    "active": "Aktiv",
+    "activeLabel": "Entwicklung"
+  },
+  "contribute": {
+    "title": "Wie man beiträgt",
+    "subtitle": "Helfen Sie, Hive-Pal für alle besser zu machen",
+    "code": {
+      "title": "Code-Beiträge",
+      "description": "Tragen Sie zum Codebase bei, indem Sie Funktionen implementieren, Fehler beheben oder die Leistung verbessern. Suchen Sie in unseren GitHub-Problemen nach Aufgaben mit dem Label \"good first issue\", um zu beginnen."
+    },
+    "docs": {
+      "title": "Dokumentation",
+      "description": "Helfen Sie uns, unsere Dokumentation zu verbessern, indem Sie Fehler beheben, Beispiele hinzufügen oder Tutorials schreiben, um neuen Benutzern den Einstieg in Hive-Pal zu erleichtern."
+    },
+    "testing": {
+      "title": "Tests",
+      "description": "Testen Sie neue Funktionen, melden Sie Fehler und geben Sie Feedback zur Benutzererfahrung, um uns zu helfen, die Anwendung für alle zu verbessern."
+    },
+    "features": {
+      "title": "Feature-Anfragen",
+      "description": "Schlagen Sie neue Funktionen oder Verbesserungen vor, die Hive-Pal für Ihren Imkerei-Workflow nützlicher machen würden."
+    }
+  },
+  "cta": {
+    "title": "Treten Sie der Hive-Pal-Gemeinschaft bei",
+    "description": "Hive-Pal ist ein Open-Source-Projekt in aktiver Entwicklung. Einige Funktionen sind noch in Arbeit, aber wir heißen Beiträge und Feedback von der Imkerei-Community willkommen.",
+    "exploreDocs": "Dokumentation erkunden",
+    "viewIssues": "GitHub-Probleme anzeigen"
+  }
+}
+

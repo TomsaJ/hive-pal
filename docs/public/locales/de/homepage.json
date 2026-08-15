@@ -1,0 +1,50 @@
+{
+  "features": [
+    {
+      "title": "Mobil-optimiert",
+      "description": "Führe deine Imkereiunterlagen mit unserem responsiven mobilen Interface direkt vor Ort. Designed für die Feldnutzung auf deinem Smartphone oder Tablet.",
+      "status": "core"
+    },
+    {
+      "title": "Bienenstand-Verwaltung",
+      "description": "Verwalte deine Bienenständer mit Standortverfolgung und Ordnung. Halte alle deine Bienenstock-Standorte an einem Ort organisiert.",
+      "status": "core"
+    },
+    {
+      "title": "Bienenstock-Tracking",
+      "description": "Überwache einzelne Bienenstöcke, ihren Status und ihre Konfiguration. Verfolge Ausrüstung und führe vollständige Kolonieaufzeichnungen.",
+      "status": "core"
+    },
+    {
+      "title": "Inspektionsformulare",
+      "description": "Erfasse Beobachtungen mit optimierten Inspektionsformularen. Schnelle Schalter und Bewertungsskalen für effiziente Dateneingabe.",
+      "status": "in-progress"
+    },
+    {
+      "title": "Königinnen-Verwaltung",
+      "description": "Verfolge Königinnen-Details, Markierungsfarben und Austauschverlauf. Dokumentiere die Königinnenleistung und das Geschlecht über die Zeit.",
+      "status": "in-progress"
+    },
+    {
+      "title": "Wetter-Integration",
+      "description": "Zeichne Wetterbedingungen während der Inspektionen auf. Verfolge Umweltfaktoren neben Koloniebeobachtungen.",
+      "status": "planned"
+    },
+    {
+      "title": "Behandlungs-Tracking",
+      "description": "Protokolliere Behandlungen mit Daten und Methoden. Führe Aufzeichnungen aller Medikamente und Eingriffe.",
+      "status": "in-progress"
+    },
+    {
+      "title": "Leistungs-Einblicke",
+      "description": "Zeige Koloniegewalt und Produktionstrends im Laufe der Zeit. Nutze Daten, um deine Imkerpraxis zu optimieren.",
+      "status": "planned"
+    },
+    {
+      "title": "Selbst gehostet",
+      "description": "Führe Hive-Pal auf deinem eigenen Server oder lokalen Netzwerk aus. Behalte die vollständige Kontrolle über deine Imkereiunterlagen.",
+      "status": "core"
+    }
+  ]
+}
+
